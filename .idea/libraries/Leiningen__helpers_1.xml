@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: helpers:1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/helpers/helpers/1/helpers-1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: org.bouncycastle/bcmail-jdk14:1.38">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/bouncycastle/bcmail-jdk14/1.38/bcmail-jdk14-1.38.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

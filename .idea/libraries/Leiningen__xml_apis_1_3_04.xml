@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: xml-apis:1.3.04">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/xml-apis/xml-apis/1.3.04/xml-apis-1.3.04.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

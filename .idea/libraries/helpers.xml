@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="helpers">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../helpers" />
+      <root url="file://$PROJECT_DIR$/../helpers/general_helpers.clj" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$PROJECT_DIR$/../helpers" recursive="false" />
+  </library>
+</component>
