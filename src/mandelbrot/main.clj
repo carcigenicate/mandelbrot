@@ -7,75 +7,51 @@
 
             [helpers.general-helpers :as g])
 
-
-
   (:gen-class))
 
-(def width 2000)
-(def height 1400)
-
-(def mandel-min -1)
-(def mandel-max 1)
+(def screen-width 200)
+(def screen-height 200)
 
 (def max-tests 200)
 
-(defn map-to-mandel [n]
-  (q/map-range n 0 width mandel-min mandel-max))
+(defn all-pixels-to-draw []
+  (into #{}
+        (for [y (range screen-height)
+              x (range screen-width)]
+          [x y])))
 
-(defn square-complex [a b]
-    [(- (* a a)
-        (* b b))
+(defn map-dimension [n screen-dim-max dimension-min dimension-max]
+  (q/map-range n 0 screen-dim-max dimension-min dimension-max))
 
-     (* 2 a b)])
-
-(defn fz=z2+c [[zr zi] [cr ci]]
-  (let [[r' i'] (square-complex zr zi)]
-    [(+ r' cr) (+ i' ci)]))
-
-
-; TODO: Terrible name?
-(defn converges-at? [a b max-iters]
-  (loop [n 0
-         r a
-         i b]
-    (let [[r' i'] (fz=z2+c [r i] [a b])]
-      (if (and (< n max-iters)
-               (<= (Math/abs ^double (+ r' i')) 2))
-        (recur (inc n) r' i')
-        n))))
-
-(defn int-to-color [n]
-  (let [r (int (/ n (* 255 255 255)))
-        n' (rem n 255)
-
-        g (int (/ n' (* 255 255)))
-        n'' (rem n' 255)
-
-        b (int (/ n'' 255))]
-    [r g b]))
+(defn screen-coord-mandel-point [x y mandel-x-min mandel-x-max mandel-y-min mandel-y-max]
+  [(map-dimension x screen-width mandel-x-min mandel-x-max)
+   (map-dimension y screen-height mandel-y-min mandel-y-max)])
 
 (defn setup-state []
-  (doseq [y (range height)
-          x (range width)]
+  {:x 0 :y 0 :n 0})
 
-    (let [a (map-to-mandel x)
-          b (map-to-mandel y)
+(defn next-position [x y width]
+  (let [x' (inc x)
+        wrapped-x (if (< x' width) x' 0)]
+    [wrapped-x
+     (if (zero? wrapped-x) (inc y) y)]))
 
-          n (converges-at? a b max-tests)]
+(defn update-state [{x :x y :y :as state}])
+  ; How are we going to pass in m/mandel-x-min etc?
+  ; Are we going to have to dereference them from m/ every iteration?
 
-      (let [c (c/complex-purple n)]
-        (q/with-stroke c
-          (q/point x y)))))
+  ; TODO: Grab queued pixels from m/, clear the queue, then update
 
-  (println "DONE!"))
 
-(defn update-state [state])
+(defn draw-state [{x :x y :y n :n}]
+  (let [c (c/complex-purple n)]
 
-(defn draw-state [state])
+    (q/with-stroke c
+      (q/point x y))))
 
 (defn -main []
   (q/defsketch Mandel
-               :size [width height]
+               :size [screen-width screen-height]
 
                :setup setup-state
                :update update-state
