@@ -10,16 +10,12 @@
 
   (:gen-class))
 
-(def mandel-x-min-A (atom -2))
-(def mandel-x-max-A (atom 2))
-
-(def mandel-y-min-A (atom -2))
-(def mandel-y-max-A (atom 2))
-
 (def screen-width 200)
 (def screen-height 200)
 
 (def max-tests 200)
+
+(defrecord Mandel-Limits [x-min x-max y-min y-max])
 
 (defn all-pixels-to-draw []
   (into #{}
@@ -30,30 +26,35 @@
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (q/map-range n 0 screen-dim-max dimension-min dimension-max))
 
-(defn screen-coord-mandel-point [x y]
-  [(map-dimension x screen-width @mandel-x-min-A @mandel-x-max-A)
-   (map-dimension y screen-height @mandel-y-min-A @mandel-y-max-A)])
+(defn screen-coord-mandel-point [x y limits]
+  (let [{:keys [x-min x-max y-min y-max]} limits]
+    [(map-dimension x screen-width x-min x-max)
+     (map-dimension y screen-height y-min y-max)]))
 
-(defn screen-points-to-mandel [screen-points]
-  (map (fn [[x y]] (screen-coord-mandel-point x y))
+(defn screen-points-to-mandel [screen-points limits]
+  (map (fn [[x y]] (screen-coord-mandel-point x y limits))
        screen-points))
 
 (defn setup-state []
-  (cif/start-finder)
-  {:x 0 :y 0 :n 0})
+  (let [points (all-pixels-to-draw)]
+    (cif/start-finder points max-tests)
+    {:mandel-limits (->Mandel-Limits -2 2 -2 2)}))
 
-(defn update-state [{x :x y :y :as state}])
+(defn update-state [state]
   ; How are we going to pass in m/mandel-x-min etc?
   ; Are we going to have to dereference them from m/ every iteration?
 
   ; TODO: Grab queued pixels from m/, clear the queue, then update
+  state)
 
 
-(defn draw-state [{x :x y :y n :n}]
-  (let [c (c/complex-purple n)]
+(defn draw-state [state]
+  (let [point-data (cif/grab-and-clear-queue)]
 
-    (q/with-stroke c
-      (q/point x y))))
+    (doseq [{a :a b :b n :n} point-data]
+      ; TODO: Need to translate a,b back to x,y to draw
+      (q/with-stroke c (c/complex-purple n)
+        (q/point x y)))))
 
 (defn -main []
   (q/defsketch Mandel

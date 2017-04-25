@@ -4,6 +4,8 @@
 
 (def ex (Executors/newFixedThreadPool 4))
 
+(defrecord Point-data [a b n])
+
 ; Make ref
 (def draw-queue (ref []))
 
@@ -20,7 +22,7 @@
 (defn create-finder-task [a b max-iters] ^Runnable
   (fn []
     (let [n (m/converges-at? a b max-iters)]
-      (add-to-queue n))))
+      (add-to-queue (->Point-data a b n)))))
 
 (defn start-finder [points max-iters]
   (doseq [[a b] points]
