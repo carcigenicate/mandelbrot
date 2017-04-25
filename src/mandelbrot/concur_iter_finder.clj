@@ -4,21 +4,24 @@
 
 (def ex (Executors/newFixedThreadPool 4))
 
-(def draw-queue-A (atom []))
+; Make ref
+(def draw-queue (ref []))
 
 (defn add-to-queue [n]
-  (swap! draw-queue-A #(conj % n)))
+  (dosync
+    (alter draw-queue #(conj % n))))
 
 (defn grab-and-clear-queue []
-  (let [results (atom [])]
-    (swap! draw-queue-A
-           (fn [res] (reset! results res)
-                     []))
-    results))
+  (dosync
+    (let [results @draw-queue]
+      (ref-set draw-queue [])
+      results)))
 
 (defn create-finder-task [a b max-iters] ^Runnable
   (fn []
     (let [n (m/converges-at? a b max-iters)]
       (add-to-queue n))))
 
-(defn start-finder [points scre])
+(defn start-finder [points max-iters]
+  (doseq [[a b] points]
+    (.submit ex (create-finder-task a b max-iters))))

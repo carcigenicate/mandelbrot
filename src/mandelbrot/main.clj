@@ -39,14 +39,8 @@
        screen-points))
 
 (defn setup-state []
-
+  (cif/start-finder)
   {:x 0 :y 0 :n 0})
-
-(defn next-position [x y width]
-  (let [x' (inc x)
-        wrapped-x (if (< x' width) x' 0)]
-    [wrapped-x
-     (if (zero? wrapped-x) (inc y) y)]))
 
 (defn update-state [{x :x y :y :as state}])
   ; How are we going to pass in m/mandel-x-min etc?
