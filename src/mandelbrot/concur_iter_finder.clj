@@ -21,4 +21,4 @@
     (let [n (m/converges-at? a b max-iters)]
       (add-to-queue n))))
 
-(defn start-finder [points])
+(defn start-finder [points scre])

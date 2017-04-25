@@ -1,11 +1,5 @@
 (ns mandelbrot.mandelbrot)
 
-(def mandel-x-min-A (atom  -1))
-(def mandel-x-max-A (atom 1))
-
-(def mandel-y-min-A (atom -1))
-(def mandel-y-max-A (atom 1))
-
 (defn square-complex [a b]
   [(- (* a a)
       (* b b))
