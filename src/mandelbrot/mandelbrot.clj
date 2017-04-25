@@ -6,10 +6,6 @@
 (def mandel-y-min-A (atom -1))
 (def mandel-y-max-A (atom 1))
 
-(def draw-queue-A (atom []))
-
-(defn start-finding-iters [pixels])
-
 (defn square-complex [a b]
   [(- (* a a)
       (* b b))
