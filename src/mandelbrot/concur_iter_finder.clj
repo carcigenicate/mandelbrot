@@ -4,7 +4,7 @@
   (:import  [java.util Collections Collections$SynchronizedCollection ArrayList]
             [java.util.concurrent ExecutorService Executors ConcurrentLinkedQueue]))
 
-(def ex (Executors/newFixedThreadPool 6))
+(def ex (Executors/newFixedThreadPool 20))
 
 (def draw-queue (Collections/synchronizedCollection (ArrayList.)))
 

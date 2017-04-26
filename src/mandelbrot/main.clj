@@ -15,10 +15,13 @@
 
 (def screen-ratio 1)
 
-(def screen-width 1000)
+(def screen-width 1500)
 (def screen-height (* screen-width screen-ratio))
 
 (def max-tests 100)
+
+(def key-move-increment 0.25)
+(def key-zoom-increment 0.5)
 
 (defrecord Mandel-Limits [x-min x-max y-min y-max])
 
@@ -82,6 +85,10 @@
           (q/with-stroke c
             (q/point x y)))))))
 
+(defn key-handler [state event]
+  (println state)
+  (let []))
+
 (defn -main []
 
   (q/defsketch Mandel
@@ -90,6 +97,8 @@
                :setup setup-state
                :update update-state
                :draw draw-state
+
+               :key-pressed key-handler
 
                :middleware [mi/fun-mode]))
 
