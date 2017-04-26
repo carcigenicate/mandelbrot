@@ -51,7 +51,7 @@
   (let [points (all-pixels-to-draw)
         limits (->Mandel-Limits -2 2 -2 2)
         mapped-points (screen-points-to-mandel points limits)]
-    (cif/start-finder mapped-points max-tests)
+    (cif/start-finding mapped-points max-tests)
     (println "Setup Finished...")
     {:mandel-limits limits}))
 
@@ -77,7 +77,7 @@
 
 (defn -main []
   (println "Press enter to start...")
-  (read-line)
+  #_(read-line)
 
   (q/defsketch Mandel
                :size [screen-width screen-height]

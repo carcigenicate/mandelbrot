@@ -4,11 +4,7 @@
   (:import  [java.util Collections Collections$SynchronizedCollection ArrayList]
             [java.util.concurrent ExecutorService Executors ConcurrentLinkedQueue]))
 
-
 (def ex (Executors/newFixedThreadPool 6))
-
-#_
-(def draw-queue (ConcurrentLinkedQueue.))
 
 (def draw-queue (Collections/synchronizedCollection (ArrayList.)))
 
@@ -24,7 +20,9 @@
   (locking draw-queue
     (let [results (into [] draw-queue)]
       (.clear ^Collections$SynchronizedCollection draw-queue)
+
       (println (count results))
+
       results)))
 
 (defn create-finder-task [a b max-iters]
@@ -32,7 +30,11 @@
     (let [n (m/converges-at? a b max-iters)]
       (add-to-queue (->Point-data a b n)))))
 
-(defn start-finder [points max-iters]
+(defn start-finding [points max-iters]
   (doseq [[a b] points]
     (.submit ^ExecutorService ex
              ^Runnable (create-finder-task a b max-iters))))
+
+(.addShutdownHook
+  (Runtime/getRuntime)
+  (Thread. ^Runnable (fn [] (.shutdownNow ex))))
