@@ -13,9 +13,9 @@
 
 (set! *warn-on-reflection* true)
 
-(def screen-ratio 0.6)
+(def screen-ratio 1)
 
-(def screen-width 2500)
+(def screen-width 1000)
 (def screen-height (* screen-width screen-ratio))
 
 (def max-tests 100)
@@ -65,8 +65,6 @@
 (defn draw-state [state]
   (let [{limits :mandel-limits} state
         point-data (cif/grab-and-clear-queue)]
-    #_
-    (clojure.pprint/pprint point-data)
 
     (qh/with-weight 1
       (doseq [{a :a b :b n :n :as point} point-data]
@@ -76,8 +74,6 @@
             (q/point x y)))))))
 
 (defn -main []
-  (println "Press enter to start...")
-  #_(read-line)
 
   (q/defsketch Mandel
                :size [screen-width screen-height]
