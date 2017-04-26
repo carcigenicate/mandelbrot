@@ -35,6 +35,7 @@
     (.submit ^ExecutorService ex
              ^Runnable (create-finder-task a b max-iters))))
 
+; The thread pool doesn't automatically shut down and prevent prevents the JVM closing
 (.addShutdownHook
   (Runtime/getRuntime)
   (Thread. ^Runnable (fn [] (.shutdownNow ex))))
