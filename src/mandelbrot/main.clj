@@ -13,14 +13,16 @@
 
 (set! *warn-on-reflection* true)
 
-(def screen-ratio 1)
+(def screen-ratio 1) ; ~0.68 = screen ratio
 
 (def screen-width 1000)
 (def screen-height (* screen-width screen-ratio))
 
-(def max-tests 100)
+(def max-tests 200)
 
 (defrecord Mandel-Limits [x-min x-max y-min y-max])
+
+(def initial-limits (->Mandel-Limits -2 2 -2 2))
 
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (q/map-range n 0 screen-dim-max dimension-min dimension-max))
@@ -40,8 +42,8 @@
        screen-points))
 
 (defn pixel-row-partitions [width height]
-  (for [y (range height)]
-    (for [x (range width)]
+  (for [x (range width)]
+    (for [y (range height)]
       [x y])))
 
 (defn mandel-row-partitions [limits screen-width screen-height]
@@ -55,9 +57,9 @@
 
 (defn setup-state []
   (q/frame-rate 100)
+  (q/background 10 10 100)
 
-  (let [initial-limits (->Mandel-Limits -2 2 -2 2)
-        points (mandel-row-partitions initial-limits screen-width screen-height)]
+  (let [points (mandel-row-partitions initial-limits screen-width screen-height)]
 
     {:mandel-limits initial-limits
      :rows points
@@ -78,8 +80,8 @@
     (qh/with-weight 1
       (doseq [{a :a b :b n :n :as point} point-data]
         (let [[x y] (mandel-point-to-screen-point a b limits)
-              c (c/complex-purple2 n)]
-          (q/with-stroke c
+              color (c/icy-electricity n)]
+          (q/with-stroke color
             (q/point x y)))))))
 
 (defn -main []
