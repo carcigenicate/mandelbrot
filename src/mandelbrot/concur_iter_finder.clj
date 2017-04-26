@@ -2,11 +2,12 @@
   (:require [mandelbrot.mandelbrot :as m])
   (:import [java.util.concurrent ExecutorService Executors]))
 
-(def ex (Executors/newFixedThreadPool 4))
+(def ex (Executors/newFixedThreadPool 6))
 
-(defrecord Point-data [a b n])
+(defrecord Point-data [a b n]
+  Object
+  (toString [self] (str "["a "," b "]:" n)))
 
-; Make ref
 (def draw-queue (ref []))
 
 (defn add-to-queue [n]
@@ -17,6 +18,7 @@
   (dosync
     (let [results @draw-queue]
       (ref-set draw-queue [])
+      (println (count results))
       results)))
 
 (defn create-finder-task [a b max-iters] ^Runnable
