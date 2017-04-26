@@ -21,11 +21,12 @@
       (println (count results))
       results)))
 
-(defn create-finder-task [a b max-iters] ^Runnable
+(defn create-finder-task [a b max-iters]
   (fn []
     (let [n (m/converges-at? a b max-iters)]
       (add-to-queue (->Point-data a b n)))))
 
 (defn start-finder [points max-iters]
   (doseq [[a b] points]
-    (.submit ex (create-finder-task a b max-iters))))
+    (.submit ^ExecutorService ex
+             ^Runnable (create-finder-task a b max-iters))))

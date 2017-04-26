@@ -11,6 +11,8 @@
 
   (:gen-class))
 
+(set! *warn-on-reflection* true)
+
 (def screen-ratio 0.6)
 
 (def screen-width 2500)
