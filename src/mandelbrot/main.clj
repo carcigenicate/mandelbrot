@@ -22,12 +22,6 @@
 
 (defrecord Mandel-Limits [x-min x-max y-min y-max])
 
-(defn all-pixels-to-draw []
-  (vec
-    (for [y (range screen-height)
-          x (range screen-width)]
-      [x y])))
-
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (q/map-range n 0 screen-dim-max dimension-min dimension-max))
 
@@ -45,22 +39,37 @@
   (map (fn [[x y]] (screen-coord-to-mandel-point x y limits))
        screen-points))
 
-(defn setup-state []
-  (q/frame-rate 1)
+(defn pixel-row-partitions [width height]
+  (for [y (range height)]
+    (for [x (range width)]
+      [x y])))
 
-  (let [points (all-pixels-to-draw)
-        limits (->Mandel-Limits -2 2 -2 2)
-        mapped-points (screen-points-to-mandel points limits)]
-    (cif/start-finding mapped-points max-tests)
-    (println "Setup Finished...")
-    {:mandel-limits limits}))
+(defn mandel-row-partitions [limits screen-width screen-height]
+  (let [rows (pixel-row-partitions screen-width screen-height)]
+     (map #(screen-points-to-mandel % limits) rows)))
+
+(defn populate-rows [state]
+  (assoc state :rows
+               (mandel-row-partitions (:mandel-limits state)
+                                      screen-width screen-height)))
+
+(defn setup-state []
+  (q/frame-rate 100)
+
+  (let [initial-limits (->Mandel-Limits -2 2 -2 2)
+        points (mandel-row-partitions initial-limits screen-width screen-height)]
+
+    {:mandel-limits initial-limits
+     :rows points
+     :updated? false}))
 
 (defn update-state [state]
-  ; How are we going to pass in m/mandel-x-min etc?
-  ; Are we going to have to dereference them from m/ every iteration?
+  (let [{limits :mandel-limits rows :rows} state
+        [row & rest-rows] rows]
 
-  ; TODO: Grab queued pixels from m/, clear the queue, then update
-  state)
+    (cif/start-finding row max-tests)
+
+    (assoc state :rows rest-rows)))
 
 (defn draw-state [state]
   (let [{limits :mandel-limits} state
@@ -69,7 +78,7 @@
     (qh/with-weight 1
       (doseq [{a :a b :b n :n :as point} point-data]
         (let [[x y] (mandel-point-to-screen-point a b limits)
-              c (c/complex-purple n)]
+              c (c/complex-purple2 n)]
           (q/with-stroke c
             (q/point x y)))))))
 

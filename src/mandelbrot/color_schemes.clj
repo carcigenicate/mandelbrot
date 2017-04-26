@@ -17,3 +17,10 @@
     [(w (+ r n))
      (w (+ g (* n n)))
      (w (+ b (* n n n)))]))
+
+(defn complex-purple2 [n]
+  (let [[r g b] [100 50 25]
+        w #(g/clamp % 0 255)]
+    [(w (+ r n))
+     (w (+ g (* n n)))
+     (w (+ b (* n n n)))]))

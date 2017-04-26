@@ -21,7 +21,7 @@
     (let [results (into [] draw-queue)]
       (.clear ^Collections$SynchronizedCollection draw-queue)
 
-      (println (count results))
+      (println "Grab Count:" (count results))
 
       results)))
 
