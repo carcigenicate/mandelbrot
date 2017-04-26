@@ -1,23 +1,29 @@
 (ns mandelbrot.concur-iter-finder
   (:require [mandelbrot.mandelbrot :as m])
-  (:import [java.util.concurrent ExecutorService Executors]))
+
+  (:import  [java.util Collections Collections$SynchronizedCollection ArrayList]
+            [java.util.concurrent ExecutorService Executors ConcurrentLinkedQueue]))
+
 
 (def ex (Executors/newFixedThreadPool 6))
+
+#_
+(def draw-queue (ConcurrentLinkedQueue.))
+
+(def draw-queue (Collections/synchronizedCollection (ArrayList.)))
 
 (defrecord Point-data [a b n]
   Object
   (toString [self] (str "["a "," b "]:" n)))
 
-(def draw-queue (ref []))
-
-(defn add-to-queue [n]
-  (dosync
-    (alter draw-queue #(conj % n))))
+(defn add-to-queue [point-data]
+  (.add ^Collections$SynchronizedCollection draw-queue
+        point-data))
 
 (defn grab-and-clear-queue []
-  (dosync
-    (let [results @draw-queue]
-      (ref-set draw-queue [])
+  (locking draw-queue
+    (let [results (into [] draw-queue)]
+      (.clear ^Collections$SynchronizedCollection draw-queue)
       (println (count results))
       results)))
 
