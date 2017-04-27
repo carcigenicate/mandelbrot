@@ -1,5 +1,7 @@
 (ns mandelbrot.mandelbrot)
 
+(def infinity-limit 1e2)
+
 (defn square-complex [a b]
   [(- (* a a)
       (* b b))
@@ -17,6 +19,6 @@
          i b]
     (let [[r' i'] (fz=z2+c [r i] [a b])]
       (if (and (< n max-iters)
-               (<= (Math/abs ^double (+ r' i')) 16)) ; Infinity limit? 2? 16?
+               (<= (Math/abs ^double (+ r' i')) infinity-limit))
         (recur (inc n) r' i')
         n))))
