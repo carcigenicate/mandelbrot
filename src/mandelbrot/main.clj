@@ -44,10 +44,10 @@
   (let [{limits :mandel-limits} state
         point-data (cif/grab-and-clear-queue)]
 
-    (qh/with-weight 1
+    (qh/with-weight 20
       (doseq [{a :a b :b n :n :as point} point-data]
         (let [[x y] (s/mandel-point-to-screen-point a b screen-width screen-height limits)
-              color (c/icy-electricity n)]
+              color (c/lava n)]
           (q/with-stroke color
             (q/point x y)))))))
 

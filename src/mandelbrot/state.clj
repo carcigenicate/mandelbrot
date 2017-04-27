@@ -17,6 +17,12 @@
     (for [y (range height)]
       [x y])))
 
+(defn map-range [value start1 stop1 start2 stop2]
+  (+ start2
+     (* (- stop2 start2)
+        (/ (- value start1)
+           (- stop1 start1)))))
+
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (q/map-range n 0 screen-dim-max dimension-min dimension-max))
 
@@ -42,3 +48,14 @@
   (assoc state :rows
                (mandel-row-partitions (:mandel-limits state)
                                       screen-width screen-height)))
+
+(defn range-test []
+  (let [nmr q/map-range
+        mmr map-range
+        v 5
+        s1 0 e1 10
+        s2 10 e2 20]
+    (println (nmr v s1 e1 s2 e2)
+             (mmr v s1 e1 s2 e2))))
+
+
