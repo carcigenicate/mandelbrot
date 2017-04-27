@@ -4,7 +4,12 @@
   (:import  [java.util Collections Collections$SynchronizedCollection ArrayList]
             [java.util.concurrent ExecutorService Executors ConcurrentLinkedQueue]))
 
-(def ex (Executors/newFixedThreadPool 20))
+(def n-threads 10)
+
+(defn new-executor-service []
+  (Executors/newFixedThreadPool n-threads))
+
+(def ex (atom (new-executor-service)))
 
 (def draw-queue (Collections/synchronizedCollection (ArrayList.)))
 
@@ -20,7 +25,7 @@
   (locking draw-queue
     (let [results (into [] draw-queue)]
       (.clear ^Collections$SynchronizedCollection draw-queue)
-
+      #_
       (println "Grab Count:" (count results))
 
       results)))
@@ -31,11 +36,20 @@
       (add-to-queue (->Point-data a b n)))))
 
 (defn start-finding [points max-iters]
+  (when-not @ex
+    (reset! ex (new-executor-service)))
+
   (doseq [[a b] points]
-    (.submit ^ExecutorService ex
+    (.submit ^ExecutorService @ex
              ^Runnable (create-finder-task a b max-iters))))
+
+(defn cancel-finding-all []
+  (.shutdownNow @ex)
+  (reset! ex nil))
 
 ; The thread pool doesn't automatically shut down and prevent prevents the JVM closing
 (.addShutdownHook
   (Runtime/getRuntime)
-  (Thread. ^Runnable (fn [] (.shutdownNow ex))))
+  (Thread. ^Runnable
+           (fn []
+             (cancel-finding-all))))
