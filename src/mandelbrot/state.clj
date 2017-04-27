@@ -1,5 +1,6 @@
 (ns mandelbrot.state
-  (:require [quil.core :as q]))
+  (:require [quil.core :as q]
+            [helpers.general-helpers :as g]))
 
 (defrecord Mandel-Limits [x-min x-max y-min y-max]
   Object
@@ -17,12 +18,6 @@
     (for [y (range height)]
       [x y])))
 
-(defn map-range [value start1 stop1 start2 stop2]
-  (+ start2
-     (* (- stop2 start2)
-        (/ (- value start1)
-           (- stop1 start1)))))
-
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (q/map-range n 0 screen-dim-max dimension-min dimension-max))
 
@@ -33,7 +28,7 @@
 
 (defn mandel-point-to-screen-point [a b screen-width screen-height limits]
   (let [{:keys [x-min x-max y-min y-max]} limits]
-    [(Math/round ^float (q/map-range a x-min x-max 0 screen-width))
+    [(g/map-range a x-min x-max 0 screen-width)
      (Math/round ^float (q/map-range b y-min y-max 0 screen-height))]))
 
 (defn screen-points-to-mandel [screen-points screen-width screen-height limits]
