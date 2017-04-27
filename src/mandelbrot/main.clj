@@ -22,9 +22,11 @@
 
 (def max-tests 200)
 
+(def background-color [10 10 100])
+
 (defn setup-state []
   (q/frame-rate 100)
-  (q/background 10 10 100)
+  (apply q/background background-color)
 
   (let [points (s/mandel-row-partitions s/initial-limits screen-width screen-height)]
 
@@ -49,6 +51,17 @@
           (q/with-stroke color
             (q/point x y)))))))
 
+(defn key-handler-wrapper [state event]
+  (let [state' (i/key-handler state event)
+        limits (:mandel-limits state)
+        limits' (:mandel-limits state')]
+    (if-not (= limits limits')
+      (do
+        (apply q/background background-color)
+        state')
+      state)))
+
+
 (defn -main []
 
   (q/defsketch Mandel
@@ -58,7 +71,7 @@
                :update update-state
                :draw draw-state
 
-               :key-pressed i/key-handler
+               :key-pressed key-handler-wrapper
 
                :middleware [mi/fun-mode]))
 
