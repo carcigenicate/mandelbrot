@@ -23,12 +23,15 @@
 
 ;TODO Need to divide?
 (defn zoom [state by]
-  (-> state
-    (update-limit :x-min #(+ % by))
-    (update-limit :y-min #(+ % by))
+  (let [f (:zoom-factor state)]
+    (-> state
+      (update-limit :x-min #(+ (* % f) by))
+      (update-limit :y-min #(+ (* % f) by))
 
-    (update-limit :x-max #(- % by))
-    (update-limit :y-max #(- % by))))
+      (update-limit :x-max #(- (* % f) by))
+      (update-limit :y-max #(- (* % f) by))
+
+      (update :zoom-factor #(/ % by)))))
 
 (defn action-dispatch [key state]
 

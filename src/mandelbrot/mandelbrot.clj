@@ -1,6 +1,6 @@
 (ns mandelbrot.mandelbrot)
 
-(def infinity-limit 1e3)
+(def infinity-limit 2)
 
 (defn square-complex [a b]
   [(- (* a a)
@@ -8,7 +8,7 @@
 
    (* 2 a b)])
 
-(defn fz=z2+c [[zr zi] [cr ci]]
+(defn fz=z2+c [zr zi cr ci]
   (let [[r' i'] (square-complex zr zi)]
     [(+ r' cr) (+ i' ci)]))
 
@@ -17,7 +17,7 @@
   (loop [n 0
          r a
          i b]
-    (let [[r' i'] (fz=z2+c [r i] [a b])]
+    (let [[r' i'] (fz=z2+c r i a b)]
       (if (and (< n max-iters)
                (<= (Math/abs ^double (+ r' i')) infinity-limit))
         (recur (inc n) r' i')

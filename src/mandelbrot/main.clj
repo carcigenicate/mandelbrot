@@ -17,8 +17,6 @@
 ; TODO: Time different precisions!
 
 (set! *warn-on-reflection* true)
-; Needed since BigDecimal requires knowing how much precision to use.
-(set! *math-context* (MathContext. 100 RoundingMode/HALF_UP))
 
 (def screen-ratio 1) ; ~0.68 = screen ratio
 
@@ -52,7 +50,7 @@
     (qh/with-weight 1
       (doseq [{a :a b :b n :n :as point} point-data]
         (let [[x y] (s/mandel-point-to-screen-point a b screen-width screen-height limits)
-              color (c/lava n)]
+              color (c/icy-electricity n)]
           (q/with-stroke color
             (q/point x y)))))))
 
@@ -78,6 +76,8 @@
 
                :key-pressed key-handler-wrapper
 
-               :middleware [mi/fun-mode]))
+               :middleware [mi/fun-mode]
+
+               :on-close #(do % (println "Running closing routine...") (cif/cancel-finding-all))))
 
 
