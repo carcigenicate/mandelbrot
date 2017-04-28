@@ -44,7 +44,9 @@
              ^Runnable (create-finder-task a b max-iters))))
 
 (defn cancel-finding-all []
-  (.shutdownNow @ex)
+  (when @ex
+    (.shutdownNow @ex))
+
   (reset! ex nil))
 
 ; The thread pool doesn't automatically shut down and prevent prevents the JVM closing

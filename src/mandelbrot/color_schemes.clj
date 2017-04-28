@@ -30,10 +30,16 @@
      (c (+ b (* n n n)))]))
 
 (defn lava [n]
-  (let [[r g b] [25 25 50]]
+  (let [[r g b] [75 5 5]]
     [(c (+ b (* n n n)))
      (c (+ g (* n n)))
      (c (+ r n))]))
+
+(defn moss [n]
+  (let [[r g b] [25 50 25]]
+    [(c (+ b (* n)))
+     (c (+ g (* n n n)))
+     (c (+ r (* n n)))]))
 
 (defn simple-shape [n]
   (let [sub -200
@@ -43,8 +49,30 @@
      (c (+ r (* n n)))]))
 
 
-(defn quads [n a b]
+(defn trippy1 [n a b]
   (let [f w]
-    [(f (/ n a (if (zero? b) 0.1 b)))
-     (f (* n a b))
-     (f (+ n a b))]))
+    [(f (* n a b 2))
+     (f (* n a b 3))
+     (f (* n a b 4))]))
+
+(defn trippy2 [n a b]
+  (let [f w]
+    [(f (/ (* n a b) 2))
+     (f (/ (* n a b) 3))
+     (f (/ (* n a b) 4))]))
+
+(defn series [n]
+  (cond
+    (zero? (rem n 3))
+    (lava n)
+
+    (zero? (rem n 4))
+    (icy-electricity n)
+
+    (zero? (rem n 4))
+    (simple-shape n)
+
+    :else
+    (complex-purple n)))
+
+

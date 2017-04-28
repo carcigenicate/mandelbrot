@@ -11,13 +11,18 @@
             [helpers.general-helpers :as g]
             [helpers.quil-helpers :as qh])
 
-  (:gen-class))
+  (:gen-class)
+  (:import (java.math MathContext RoundingMode)))
+
+; TODO: Time different precisions!
 
 (set! *warn-on-reflection* true)
+; Needed since BigDecimal requires knowing how much precision to use.
+(set! *math-context* (MathContext. 100 RoundingMode/HALF_UP))
 
 (def screen-ratio 1) ; ~0.68 = screen ratio
 
-(def screen-width 1000)
+(def screen-width 900)
 (def screen-height (* screen-width screen-ratio))
 
 (def max-tests 200)

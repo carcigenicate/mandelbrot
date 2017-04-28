@@ -1,6 +1,9 @@
 (ns mandelbrot.state
   (:require [quil.core :as q]
-            [helpers.general-helpers :as g]))
+            [helpers.general-helpers :as g])
+  (:import (java.math RoundingMode MathContext)))
+
+(set! *math-context* (MathContext. 100 RoundingMode/HALF_UP))
 
 (defrecord Mandel-Limits [x-min x-max y-min y-max]
   Object
@@ -8,7 +11,8 @@
 
 (defrecord State [mandel-limits rows])
 
-(def initial-limits (->Mandel-Limits -2 2 -2 2))
+(def initial-limits (->Mandel-Limits (bigdec -2) (bigdec 2)
+                                     (bigdec -2) (bigdec 2)))
 
 (defn initial-state [mandel-points]
   (->State initial-limits mandel-points))
@@ -19,7 +23,7 @@
       [x y])))
 
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
-  (q/map-range n 0 screen-dim-max dimension-min dimension-max))
+  (g/map-range n 0 screen-dim-max dimension-min dimension-max))
 
 (defn screen-coord-to-mandel-point [x y screen-width screen-height limits]
   (let [{:keys [x-min x-max y-min y-max]} limits]
@@ -28,8 +32,8 @@
 
 (defn mandel-point-to-screen-point [a b screen-width screen-height limits]
   (let [{:keys [x-min x-max y-min y-max]} limits]
-    [(Math/round ^float (q/map-range a x-min x-max 0 screen-width))
-     (Math/round ^float (q/map-range b y-min y-max 0 screen-height))]))
+    [(Math/round ^float (g/map-range a x-min x-max 0 screen-width))
+     (Math/round ^float (g/map-range b y-min y-max 0 screen-height))]))
 
 (defn screen-points-to-mandel [screen-points screen-width screen-height limits]
   (map (fn [[x y]] (screen-coord-to-mandel-point x y screen-width screen-height limits))

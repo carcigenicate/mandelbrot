@@ -21,6 +21,7 @@
       (update-limit :y-min #(+ % by))
       (update-limit :y-max #(+ % by))))
 
+;TODO Need to divide?
 (defn zoom [state by]
   (-> state
     (update-limit :x-min #(+ % by))
