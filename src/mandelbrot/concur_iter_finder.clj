@@ -31,7 +31,6 @@
 (defn create-finder-task [a b max-iters]
   (fn []
     (let [n (m/converges-at? a b max-iters)]
-
       (add-to-queue (->Point-data a b n)))))
 
 (defn start-finding [points max-iters]

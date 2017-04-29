@@ -3,8 +3,8 @@
             [mandelbrot.concur-iter-finder :as cif]
             [quil.core :as q]))
 
-(def key-move-increment 0.25)
-(def key-zoom-increment 0.5)
+(def move-perc 0.9)
+(def zoom-perc 0.5)
 
 (defn update-limit [state limit-key f]
   (update-in state [:mandel-limits limit-key] f))
@@ -21,7 +21,7 @@
       (update-limit :y-min #(+ % by))
       (update-limit :y-max #(+ % by))))
 
-;TODO Need to divide?
+#_
 (defn zoom [state by]
   (let [f (:zoom-factor state)]
     (-> state
@@ -31,21 +31,38 @@
       (update-limit :x-max #(- (* % f) by))
       (update-limit :y-max #(- (* % f) by))
 
-      (update :zoom-factor #(/ % by)))))
+      (update :zoom-factor #(* % by)))))
+
+(defn limit-dimension-sizes [limits]
+  (let [{:keys [x-min x-max y-min y-max]} limits]
+    [(- x-max x-min)
+     (- y-max y-min)]))
+
+(defn zoom [state x-by y-by]
+  (let []
+    (-> state
+        (update-limit :x-min #(+ % x-by))
+        (update-limit :x-max #(- % x-by))
+
+        (update-limit :y-min #(+ % y-by))
+        (update-limit :y-max #(- % y-by)))))
 
 (defn action-dispatch [key state]
+  (let [[x-length y-length] (limit-dimension-sizes (:mandel-limits state))
+        x-zoom-adj (* x-length zoom-perc 0.5)
+        x-move-adj (* x-length move-perc 0.5)
+        y-zoom-adj (* y-length zoom-perc 0.5)
+        y-move-adj (* y-length move-perc 0.5)]
 
-  (let [m key-move-increment
-        z key-zoom-increment]
     (case key
-      \a (move-x state (- m))
-      \d (move-x state m)
+      \a (move-x state (- x-move-adj))
+      \d (move-x state x-move-adj)
 
-      \w (move-y state (- m))
-      \s (move-y state m)
+      \w (move-y state (- y-move-adj))
+      \s (move-y state y-move-adj)
 
-      \z (zoom state z) ; In
-      \x (zoom state (- z)) ; Out
+      \z (zoom state x-zoom-adj y-zoom-adj) ; In
+      \x (zoom state (- x-zoom-adj) (- y-zoom-adj)) ; Out
 
       nil)))
 

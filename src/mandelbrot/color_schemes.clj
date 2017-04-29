@@ -31,9 +31,9 @@
 
 (defn lava [n]
   (let [[r g b] [75 5 5]]
-    [(c (+ b (* n n n)))
+    [(c (+ r (* n n n)))
      (c (+ g (* n n)))
-     (c (+ r n))]))
+     (c (+ b n))]))
 
 (defn moss [n]
   (let [[r g b] [25 50 25]]
@@ -60,6 +60,11 @@
     [(f (/ (* n a b) 2))
      (f (/ (* n a b) 3))
      (f (/ (* n a b) 4))]))
+
+(defn test1 [n a b]
+  [(w (* n n))
+   (w (* n a))
+   (w (* n b))])
 
 (defn series [n]
   (cond
