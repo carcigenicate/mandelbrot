@@ -25,14 +25,13 @@
   (locking draw-queue
     (let [results (into [] draw-queue)]
       (.clear ^Collections$SynchronizedCollection draw-queue)
-      #_
-      (println "Grab Count:" (count results))
 
       results)))
 
 (defn create-finder-task [a b max-iters]
   (fn []
     (let [n (m/converges-at? a b max-iters)]
+
       (add-to-queue (->Point-data a b n)))))
 
 (defn start-finding [points max-iters]
@@ -45,7 +44,7 @@
 
 (defn cancel-finding-all []
   (when @ex
-    (.shutdownNow @ex))
+    (.shutdownNow ^ExecutorService @ex))
 
   (reset! ex nil))
 

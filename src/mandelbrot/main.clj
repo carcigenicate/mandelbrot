@@ -11,19 +11,18 @@
             [helpers.general-helpers :as g]
             [helpers.quil-helpers :as qh])
 
-  (:gen-class)
-  (:import (java.math MathContext RoundingMode)))
+  (:import [java.math MathContext RoundingMode])
 
-; TODO: Time different precisions!
+  (:gen-class))
 
 (set! *warn-on-reflection* true)
 
 (def screen-ratio 1) ; ~0.68 = screen ratio
 
-(def screen-width 900)
+(def screen-width 1500)
 (def screen-height (* screen-width screen-ratio))
 
-(def max-tests 200)
+(def max-tests 100)
 
 (def background-color [10 10 100])
 
@@ -39,7 +38,8 @@
   (let [{limits :mandel-limits rows :rows} state
         [row & rest-rows] rows]
 
-    (cif/start-finding row max-tests)
+    (when row
+      (cif/start-finding row max-tests))
 
     (assoc state :rows rest-rows)))
 
@@ -78,6 +78,7 @@
 
                :middleware [mi/fun-mode]
 
-               :on-close #(do % (println "Running closing routine...") (cif/cancel-finding-all))))
+               :on-close
+               #(do % (println "Running closing routine...") (cif/cancel-finding-all))))
 
 

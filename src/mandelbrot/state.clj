@@ -3,14 +3,19 @@
             [helpers.general-helpers :as g])
   (:import (java.math RoundingMode MathContext)))
 
+(set! *warn-on-reflection* true)
+
 (defrecord Mandel-Limits [x-min x-max y-min y-max]
   Object
   (toString [self] (str "x[" x-min "," x-max "] y[" y-min "," y-max "]")))
 
 (defrecord State [mandel-limits rows zoom-factor])
 
-(def initial-limits (->Mandel-Limits -2 2
-                                     -2 2))
+(def limit-type-caster float)
+
+; Change back to bigdec at some point
+(def initial-limits (->Mandel-Limits (limit-type-caster -2) (limit-type-caster 2)
+                                     (limit-type-caster -2) (limit-type-caster 2)))
 
 (defn initial-state [mandel-points]
   (->State initial-limits mandel-points 1))
@@ -21,7 +26,7 @@
       [x y])))
 
 (defn map-range [value start1 stop1 start2 stop2]
-  (g/map-range value start1 stop1 start2 stop2))
+  (q/map-range value start1 stop1 start2 stop2))
 
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (map-range n 0 screen-dim-max dimension-min dimension-max))
@@ -37,6 +42,7 @@
      (Math/round ^float (map-range b y-min y-max 0 screen-height))]))
 
 (defn screen-points-to-mandel [screen-points screen-width screen-height limits]
+  ; Use pmap?
   (map (fn [[x y]] (screen-coord-to-mandel-point x y screen-width screen-height limits))
        screen-points))
 
@@ -57,5 +63,13 @@
         s2 10 e2 20]
     (println (nmr v s1 e1 s2 e2)
              (mmr v s1 e1 s2 e2))))
+
+(defn time-test []
+  (let [f long
+        v (f 5)
+        s1 (f 0) e1 (f 10)
+        s2 (f 10) e2 (f 20)]
+    (g/bench
+      (g/map-range v s1 e1 s2 e2))))
 
 
