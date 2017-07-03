@@ -26,7 +26,7 @@
       [x y])))
 
 (defn map-range [value start1 stop1 start2 stop2]
-  (q/map-range value start1 stop1 start2 stop2))
+  (g/map-range value start1 stop1 start2 stop2))
 
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (map-range n 0 screen-dim-max dimension-min dimension-max))
@@ -42,7 +42,7 @@
      (Math/round ^float (map-range b y-min y-max 0 screen-height))]))
 
 (defn screen-points-to-mandel [screen-points screen-width screen-height limits]
-  ; Use pmap?
+  ; TODO: Use pmap?
   (map (fn [[x y]] (screen-coord-to-mandel-point x y screen-width screen-height limits))
        screen-points))
 
