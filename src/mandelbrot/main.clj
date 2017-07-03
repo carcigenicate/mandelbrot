@@ -17,12 +17,12 @@
 
 (set! *warn-on-reflection* true)
 
-(def screen-ratio 0.68) ; ~0.68 = screen ratio
+(def screen-ratio 0.68) ; 0.68 ~= screen ratio
 
 (def screen-width 2000)
 (def screen-height (* screen-width screen-ratio))
 
-(def max-tests 100)
+(def max-tests 50)
 
 (def background-color [10 10 100])
 

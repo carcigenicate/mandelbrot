@@ -47,7 +47,7 @@
 
   (reset! ex nil))
 
-; The thread pool doesn't automatically shut down and prevent prevents the JVM closing
+; The thread pool doesn't automatically shut down and prevents the JVM from closing
 (.addShutdownHook
   (Runtime/getRuntime)
   (Thread. ^Runnable

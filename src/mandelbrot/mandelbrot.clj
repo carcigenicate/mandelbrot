@@ -1,6 +1,6 @@
 (ns mandelbrot.mandelbrot)
 
-(def infinity-limit 1e6)
+(def infinity-limit 2.5)
 
 (defn square-complex [a b]
   [(- (* a a)
