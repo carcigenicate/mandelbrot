@@ -48,7 +48,6 @@
      (c (+ g (* n n)))
      (c (+ r (* n n)))]))
 
-
 (defn trippy1 [n a b]
   (let [f w]
     [(f (* n a b 2))
@@ -79,5 +78,16 @@
 
     :else
     (complex-purple n)))
+
+(defn wut [a b n]
+  [(w (* n a -1))
+   (w (* n b -1))
+   (w (* n a b 500))])
+
+(defn temp [a b n]
+  [(w (* a b n -100))
+   (c (* b n))
+   (c (* a b n -100))])
+
 
 

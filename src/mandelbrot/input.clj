@@ -3,8 +3,8 @@
             [mandelbrot.concur-iter-finder :as cif]
             [quil.core :as q]))
 
-(def move-perc 0.9)
-(def zoom-perc 0.5)
+(def move-perc (bigdec 0.5))
+(def zoom-perc (bigdec 0.8))
 
 (defn update-limit [state limit-key f]
   (update-in state [:mandel-limits limit-key] f))
@@ -13,25 +13,13 @@
 
 (defn move-x [state by]
   (-> state
-    (update-limit :x-min #(+ % by))
-    (update-limit :x-max #(+ % by))))
+      (update-limit :x-min #(+ % by))
+      (update-limit :x-max #(+ % by))))
 
 (defn move-y [state by]
   (-> state
       (update-limit :y-min #(+ % by))
       (update-limit :y-max #(+ % by))))
-
-#_
-(defn zoom [state by]
-  (let [f (:zoom-factor state)]
-    (-> state
-      (update-limit :x-min #(+ (* % f) by))
-      (update-limit :y-min #(+ (* % f) by))
-
-      (update-limit :x-max #(- (* % f) by))
-      (update-limit :y-max #(- (* % f) by))
-
-      (update :zoom-factor #(* % by)))))
 
 (defn limit-dimension-sizes [limits]
   (let [{:keys [x-min x-max y-min y-max]} limits]
@@ -49,6 +37,7 @@
 
 (defn action-dispatch [key state]
   (let [[x-length y-length] (limit-dimension-sizes (:mandel-limits state))
+        ; TODO: Why are the 0.5s necessary? Causes infinite to creep in if removed.
         x-zoom-adj (* x-length zoom-perc 0.5)
         x-move-adj (* x-length move-perc 0.5)
         y-zoom-adj (* y-length zoom-perc 0.5)
@@ -72,7 +61,7 @@
     (println "Key:" raw)
     (if effected-state
       (do
-        (println (str (:mandel-limits effected-state)))
+        (println (into {} (:mandel-limits effected-state)))
         (cif/cancel-finding-all)
         (s/populate-rows effected-state (q/width) (q/height)))
 

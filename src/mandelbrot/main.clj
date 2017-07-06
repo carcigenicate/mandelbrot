@@ -7,6 +7,7 @@
             [mandelbrot.concur-iter-finder :as cif]
             [mandelbrot.state :as s]
             [mandelbrot.input :as i]
+            [mandelbrot.locations :as l]
 
             [helpers.general-helpers :as g]
             [helpers.quil-helpers :as qh])
@@ -17,21 +18,28 @@
 
 (set! *warn-on-reflection* true)
 
+(set! *math-context* (MathContext. 10 RoundingMode/HALF_EVEN))
+
 (def screen-ratio 0.68) ; 0.68 ~= screen ratio
 
-(def screen-width 2000)
+(def screen-width 1500)
 (def screen-height (* screen-width screen-ratio))
 
 (def max-tests 50)
 
 (def background-color [10 10 100])
 
+(def starting-limits (s/map->Mandel-Limits
+                       (l/cast-values-using bigdec l/full-map)))
+
 (defn setup-state []
   (q/frame-rate 100)
   (apply q/background background-color)
 
-  (let [points (s/mandel-row-partitions s/initial-limits screen-width screen-height)]
+  (let [points (s/mandel-row-partitions starting-limits screen-width screen-height)]
 
+    (s/->State starting-limits points)
+    #_
     (s/initial-state points)))
 
 (defn update-state [state]
@@ -50,7 +58,7 @@
     (qh/with-weight 1
       (doseq [{a :a b :b n :n :as point} point-data]
         (let [[x y] (s/mandel-point-to-screen-point a b screen-width screen-height limits)
-              color (c/lava n)]
+              color (c/temp a b n)]
           (q/with-stroke color
             (q/point x y)))))))
 
