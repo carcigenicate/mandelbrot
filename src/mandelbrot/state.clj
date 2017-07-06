@@ -1,7 +1,8 @@
 (ns mandelbrot.state
   (:require [quil.core :as q]
             [helpers.general-helpers :as g])
-  (:import (java.math RoundingMode MathContext)))
+
+  (:import [java.math RoundingMode MathContext]))
 
 (set! *warn-on-reflection* true)
 
@@ -9,16 +10,7 @@
   Object
   (toString [self] (str "x[" x-min "," x-max "] y[" y-min "," y-max "]")))
 
-(defrecord State [mandel-limits rows zoom-factor])
-
-(def limit-type-caster float)
-
-; Change back to bigdec at some point
-(def initial-limits (->Mandel-Limits (limit-type-caster -2) (limit-type-caster 2)
-                                     (limit-type-caster -2) (limit-type-caster 2)))
-
-(defn initial-state [mandel-points]
-  (->State initial-limits mandel-points 1))
+(defrecord State [mandel-limits rows])
 
 (defn pixel-row-partitions [width height]
   (for [x (range width)]
@@ -26,7 +18,8 @@
       [x y])))
 
 (defn map-range [value start1 stop1 start2 stop2]
-  (q/map-range value start1 stop1 start2 stop2))
+  (with-precision 100
+    (g/map-range value start1 stop1 start2 stop2)))
 
 (defn map-dimension [n screen-dim-max dimension-min dimension-max]
   (map-range n 0 screen-dim-max dimension-min dimension-max))
@@ -38,8 +31,8 @@
 
 (defn mandel-point-to-screen-point [a b screen-width screen-height limits]
   (let [{:keys [x-min x-max y-min y-max]} limits]
-    [(Math/round ^float (map-range a x-min x-max 0 screen-width))
-     (Math/round ^float (map-range b y-min y-max 0 screen-height))]))
+    [(map-range a x-min x-max 0 screen-width)
+     (map-range b y-min y-max 0 screen-height)]))
 
 (defn screen-points-to-mandel [screen-points screen-width screen-height limits]
   ; Use pmap?

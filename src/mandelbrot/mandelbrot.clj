@@ -19,6 +19,6 @@
          i b]
     (let [[r' i'] (fz=z2+c r i a b)]
       (if (and (< n max-iters)
-               (<= (Math/abs ^double (+ r' i')) infinity-limit))
+               (<= (+ (* r' r') (* i' i')) (* 2 infinity-limit)))
         (recur (inc n) r' i')
         n))))
