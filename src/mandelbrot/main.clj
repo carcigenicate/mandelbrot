@@ -4,74 +4,112 @@
 
             [mandelbrot.mandelbrot :as m]
             [mandelbrot.color-schemes :as c]
-            [mandelbrot.concur-iter-finder :as cif]
-            [mandelbrot.state :as s]
+            [mandelbrot.viewport-state :as vs]
             [mandelbrot.input :as i]
-            [mandelbrot.locations :as l]
+            [mandelbrot.locations :as lo]
 
             [helpers.general-helpers :as g]
             [helpers.quil-helpers :as qh])
-
-  (:import [java.math MathContext RoundingMode])
 
   (:gen-class))
 
 (set! *warn-on-reflection* true)
 
-(set! *math-context* (MathContext. 10 RoundingMode/HALF_EVEN))
+(def screen-ratio 0.68M) ; 0.68 ~= screen ratio
 
-(def screen-ratio 0.68) ; 0.68 ~= screen ratio
-
-(def screen-width 1500)
+(def screen-width 1000M)
 (def screen-height (* screen-width screen-ratio))
 
-(def max-tests 50)
+(def draw-pixels-per-frame (* screen-width screen-height 0.05M))
+
+(def starting-position [0M 0M])
+
+(def global-coloring-f
+  "Should accept three arguments: [a b n]
+  and return a of [r g b] to color the point as."
+  (fn [a b n] (c/temp a b n)))
+
+(defrecord Animation-State [viewport-state current-draw-position])
 
 (def background-color [10 10 100])
 
-(def starting-limits (s/map->Mandel-Limits
-                       (l/cast-values-using bigdec l/full-map)))
+(def caster bigdec)
+
+(def starting-mandel-limits lo/save-map2)
+
+(defn advance-screen-coord [x y width]
+  (let [x' (inc x)
+        new-line? (>= x' width)
+        x'' (if new-line? 0 x')
+        y' (if new-line? (inc y) y)]
+    [x'' y']))
+
+(defn test-pixel [a b]
+  (m/standard-mandelbrot-test-convergence a b))
+
+(defn draw-pixel [x y color]
+  (q/with-stroke color
+    (qh/with-weight 1
+      (q/point x y))))
+
+(defn draw-n-pixels
+  "Draw n-pixels many pixels starting at starting-pos, moving left-right, top-down.
+  Returns the position of the next pixel to be drawn."
+  [n-pixels starting-pos view-state]
+  ; TODO: Eww. a and b are expensive to compute, so I'd rather not have to do it in
+  ; TODO:   test-pixel and this function. Causes bloat though.
+  (reduce (fn [[acc-x acc-y] _]
+            (let [[a b] (vs/screen-to-mandel acc-x acc-y view-state)
+                  n (test-pixel a b)
+                  color (global-coloring-f a b n)]
+              (draw-pixel acc-x acc-y color)
+              (advance-screen-coord acc-x acc-y screen-width)))
+
+          starting-pos
+
+          (range n-pixels)))
+
+(defn new-viewport-state [mandel-limits]
+  (vs/->Viewport-State (lo/cast-values-using caster mandel-limits)
+                       (vs/new-zero-based-limits screen-width screen-height)))
 
 (defn setup-state []
-  (q/frame-rate 100)
+  (q/frame-rate 60)
   (apply q/background background-color)
 
-  (let [points (s/mandel-row-partitions starting-limits screen-width screen-height)]
-
-    (s/->State starting-limits points)
-    #_
-    (s/initial-state points)))
+  (let [view-state (new-viewport-state starting-mandel-limits)]
+    (->Animation-State view-state starting-position)))
 
 (defn update-state [state]
-  (let [{limits :mandel-limits rows :rows} state
-        [row & rest-rows] rows]
+    (let [{[_ y :as starting-pos] :current-draw-position
+           view-state :viewport-state} state]
 
-    (when row
-      (cif/start-finding row max-tests))
+      (if (< y screen-height)
+        (do
+          (println "Cur pos:" starting-pos)
 
-    (assoc state :rows rest-rows)))
+          (assoc state :current-draw-position
+                       (draw-n-pixels draw-pixels-per-frame
+                                      starting-pos
+                                      view-state)))
 
-(defn draw-state [state]
-  (let [{limits :mandel-limits} state
-        point-data (cif/grab-and-clear-queue)]
-
-    (qh/with-weight 1
-      (doseq [{a :a b :b n :n :as point} point-data]
-        (let [[x y] (s/mandel-point-to-screen-point a b screen-width screen-height limits)
-              color (c/temp a b n)]
-          (q/with-stroke color
-            (q/point x y)))))))
+        state)))
 
 (defn key-handler-wrapper [state event]
-  (let [state' (i/key-handler state event)
-        limits (:mandel-limits state)
-        limits' (:mandel-limits state')]
-    (if-not (= limits limits')
-      (do
-        (apply q/background background-color)
-        state')
-      state)))
+  state)
 
+(defn mouse-handler [state event]
+  (when state
+    (apply q/background background-color)
+
+    (-> state
+      (update :viewport-state
+              #(let [new-state (i/mouse-handler % event caster)]
+                 (println (into {} (:mandel-limits new-state)))
+                 new-state))
+
+
+      (assoc :current-draw-position starting-position))))
 
 (defn -main []
 
@@ -80,13 +118,10 @@
 
                :setup setup-state
                :update update-state
-               :draw draw-state
 
                :key-pressed key-handler-wrapper
+               :mouse-pressed mouse-handler
 
                :middleware [mi/fun-mode]
-
-               :on-close
-               #(do % (println "Running closing routine...") (cif/cancel-finding-all))))
-
-
+                #_
+               :on-close))

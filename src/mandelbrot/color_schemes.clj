@@ -1,11 +1,13 @@
 (ns mandelbrot.color-schemes
   (:require [helpers.general-helpers :as g]))
 
+; TODO: All litarals should be big decimals to prevent precision loss.
+
 (defn c [n]
-  (g/clamp n 0 255))
+  (g/clamp n 0M 255M))
 
 (defn w [n]
-  (g/wrap n 0 255))
+  (g/wrap n 0M 255M))
 
 (defn- int-to-color [n]
   (let [r (int (/ n (* 255 255 255)))
@@ -48,18 +50,6 @@
      (c (+ g (* n n)))
      (c (+ r (* n n)))]))
 
-(defn trippy1 [n a b]
-  (let [f w]
-    [(f (* n a b 2))
-     (f (* n a b 3))
-     (f (* n a b 4))]))
-
-(defn trippy2 [n a b]
-  (let [f w]
-    [(f (/ (* n a b) 2))
-     (f (/ (* n a b) 3))
-     (f (/ (* n a b) 4))]))
-
 (defn test1 [n a b]
   [(w (* n n))
    (w (* n a))
@@ -67,13 +57,13 @@
 
 (defn series [n]
   (cond
-    (zero? (rem n 3))
+    (zero? (rem n 3M))
     (lava n)
 
-    (zero? (rem n 4))
+    (zero? (rem n 4M))
     (icy-electricity n)
 
-    (zero? (rem n 4))
+    (zero? (rem n 4M))
     (simple-shape n)
 
     :else
@@ -82,10 +72,10 @@
 (defn wut [a b n]
   [(w (* n a -1))
    (w (* n b -1))
-   (w (* n a b 500))])
+   (w (* n a b 500M))])
 
 (defn temp [a b n]
-  [(w (* a b n -100))
+  [(w (Math/pow a n))
    (c (* b n))
    (c (* a b n -100))])
 
