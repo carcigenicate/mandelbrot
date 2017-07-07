@@ -2,7 +2,7 @@
   (:require [quil.core :as q]
             [helpers.general-helpers :as g]))
 
-(def mapping-precision 6)
+(def mapping-precision 10)
 
 (set! *warn-on-reflection* true)
 
@@ -13,7 +13,7 @@
 (defrecord Viewport-State [mandel-limits screen-limits])
 
 (defn new-zero-based-limits [max-x max-y]
-  (->Limits 0 max-x 0 max-y))
+  (->Limits 0M max-x 0M max-y))
 
 ; TODO: Eww
 (defn screen-to-mandel [x y view-state]

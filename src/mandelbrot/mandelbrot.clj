@@ -1,13 +1,13 @@
 (ns mandelbrot.mandelbrot)
 
-(def std-infinity-limit 2)
-(def std-n-tests 50)
+(def std-infinity-limit 2M)
+(def std-n-tests 50M)
 
 (defn square-complex [a b]
   [(- (* a a)
       (* b b))
 
-   (* 2 a b)])
+   (* 2M a b)])
 
 (defn mandelbrot-iteration-f [seed-real seed-imag last-real last-imag]
   (let [[new-real new-imag] (square-complex last-real last-imag)]

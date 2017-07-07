@@ -5,8 +5,8 @@
 (def zoom-perc 0.9)
 
 (defn new-limits-centered-on [a b limit-width limit-height num-type-caster]
-  (let [hw (/ limit-width 2)
-        hh (/ limit-height 2)
+  (let [hw (/ limit-width 2M)
+        hh (/ limit-height 2M)
         c num-type-caster]
 
     (vs/->Limits (c (- a hw)) (c (+ a hw))
@@ -28,7 +28,7 @@
               #(let [[x-length y-length] (vs/limit-dimension-sizes %)
                      new-limits (new-limits-centered-on a b x-length y-length type-caster)
 
-                     x-zoom-adj (type-caster (* x-length zoom-perc 0.5))
+                     x-zoom-adj (type-caster (* x-length zoom-perc 0.5M))
                      x-zoom-adj' (if (= button :left) x-zoom-adj (- x-zoom-adj))]
 
                  (zoom-to new-limits x-zoom-adj'))))))

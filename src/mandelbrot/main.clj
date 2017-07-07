@@ -1,5 +1,7 @@
 (ns mandelbrot.main
-  (:require [quil.core :as q]
+  (:require [clojure.test :refer [is]]
+
+            [quil.core :as q]
             [quil.middleware :as mi]
 
             [mandelbrot.mandelbrot :as m]
@@ -17,7 +19,7 @@
 
 (def screen-ratio 0.68M) ; 0.68 ~= screen ratio
 
-(def screen-width 1000M)
+(def screen-width 100M)
 (def screen-height (* screen-width screen-ratio))
 
 (def draw-pixels-per-frame (* screen-width screen-height 0.05M))
@@ -58,6 +60,10 @@
   [n-pixels starting-pos view-state]
   ; TODO: Eww. a and b are expensive to compute, so I'd rather not have to do it in
   ; TODO:   test-pixel and this function. Causes bloat though.
+  {:pre [(is (decimal? n-pixels))
+         (is (every? decimal? starting-pos))
+         (is (every? #(-> % second decimal?) (:mandel-limits view-state)))]}
+
   (reduce (fn [[acc-x acc-y] _]
             (let [[a b] (vs/screen-to-mandel acc-x acc-y view-state)
                   n (test-pixel a b)
@@ -71,10 +77,13 @@
 
 (defn new-viewport-state [mandel-limits]
   (vs/->Viewport-State (lo/cast-values-using caster mandel-limits)
-                       (vs/new-zero-based-limits screen-width screen-height)))
+
+                       (lo/cast-values-using caster
+                         (vs/new-zero-based-limits screen-width screen-height))))
 
 (defn setup-state []
   (q/frame-rate 60)
+
   (apply q/background background-color)
 
   (let [view-state (new-viewport-state starting-mandel-limits)]
