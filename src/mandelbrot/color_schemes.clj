@@ -1,5 +1,6 @@
 (ns mandelbrot.color-schemes
-  (:require [helpers.general-helpers :as g]))
+  (:require [helpers.general-helpers :as g]
+            [clojure.test :refer [is]]))
 
 ; TODO: All litarals should be big decimals to prevent precision loss.
 
@@ -74,10 +75,24 @@
    (w (* n b -1))
    (w (* n a b 500M))])
 
-(defn temp [a b n]
-  [(w (Math/pow a n))
-   (c (* b n))
-   (c (* a b n -100))])
+(defn far-zoom-yellow-red [a b n]
+  [(w (* a 10M))
+   (w (* b n))
+   (w (* n a b 10000M))])
 
+(defn far-zoom-yellow-green [a b n]
+  [(w (* a 1000M))
+   (w (* b n 1000M))
+   (w (* n a b 10000M))])
+
+(defn far-zoom-clamped [a b n]
+  [(w (* a n 100M))
+   (c (* b n 10M))
+   (c (* n a b 10M))])
+
+(defn poster-replicate [a b n]
+  [(c (* a -100M))
+   (w (* n 10M))
+   (w (* b 30M))])
 
 

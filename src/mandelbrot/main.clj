@@ -13,37 +13,43 @@
             [helpers.general-helpers :as g]
             [helpers.quil-helpers :as qh])
 
+  (:import [java.util Date])
+
   (:gen-class))
+
 
 (set! *warn-on-reflection* true)
 
-(def screen-ratio 0.68M) ; 0.68 ~= screen ratio
+; ---------- MAIN SETTINGS ----------
 
-(def screen-width 100M)
-(def screen-height (* screen-width screen-ratio))
+(def screen-width 500M)
 
-(def draw-pixels-per-frame (* screen-width screen-height 0.05M))
-
-(def starting-position [0M 0M])
+(def starting-mandel-limits lo/full-map)
 
 (def global-coloring-f
   "Should accept three arguments: [a b n]
   and return a of [r g b] to color the point as."
-  (fn [a b n] (c/temp a b n)))
+  (fn [a b n] (c/poster-replicate a b n)))
+
+; ---------- MAIN SETTINGS ----------
+
+(def screen-ratio 0.68M) ; 0.68 ~= screen ratio
+(def screen-height (* screen-width screen-ratio))
+
+(def draw-pixels-per-frame (* screen-width screen-height 0.01M))
+
+(def starting-position [0M 0M])
 
 (defrecord Animation-State [viewport-state current-draw-position])
 
 (def background-color [10 10 100])
 
-(def caster bigdec)
-
-(def starting-mandel-limits lo/save-map2)
-
 (defn advance-screen-coord [x y width]
   (let [x' (inc x)
         new-line? (>= x' width)
-        x'' (if new-line? 0 x')
+        x'' (if new-line? 0M x')
         y' (if new-line? (inc y) y)]
+
     [x'' y']))
 
 (defn test-pixel [a b]
@@ -64,21 +70,24 @@
          (is (every? decimal? starting-pos))
          (is (every? #(-> % second decimal?) (:mandel-limits view-state)))]}
 
-  (reduce (fn [[acc-x acc-y] _]
-            (let [[a b] (vs/screen-to-mandel acc-x acc-y view-state)
-                  n (test-pixel a b)
-                  color (global-coloring-f a b n)]
-              (draw-pixel acc-x acc-y color)
-              (advance-screen-coord acc-x acc-y screen-width)))
+  (with-precision vs/mapping-precision
 
-          starting-pos
+    (reduce (fn [[acc-x acc-y] _]
+              (let [[a b] (vs/screen-to-mandel acc-x acc-y view-state)
+                    n (test-pixel a b)
+                    color (global-coloring-f a b n)]
 
-          (range n-pixels)))
+                (draw-pixel acc-x acc-y color)
+                (advance-screen-coord acc-x acc-y screen-width)))
+
+            starting-pos
+
+            (range n-pixels))))
 
 (defn new-viewport-state [mandel-limits]
-  (vs/->Viewport-State (lo/cast-values-using caster mandel-limits)
+  (vs/->Viewport-State (lo/cast-values-using bigdec mandel-limits)
 
-                       (lo/cast-values-using caster
+                       (lo/cast-values-using bigdec
                          (vs/new-zero-based-limits screen-width screen-height))))
 
 (defn setup-state []
@@ -90,8 +99,13 @@
     (->Animation-State view-state starting-position)))
 
 (defn update-state [state]
-    (let [{[_ y :as starting-pos] :current-draw-position
-           view-state :viewport-state} state]
+    (let [{[x y :as starting-pos] :current-draw-position
+           view-state :viewport-state} state
+          output-every (* screen-width screen-height 10)]
+
+      (with-precision 3
+        (println (.toPlainString ^BigDecimal (/ y screen-height 0.01M)) "%\n"
+                 (str (Date.) "\n\n")))
 
       (if (< y screen-height)
         (do
@@ -113,7 +127,7 @@
 
     (-> state
       (update :viewport-state
-              #(let [new-state (i/mouse-handler % event caster)]
+              #(let [new-state (i/mouse-handler % event)]
                  (println (into {} (:mandel-limits new-state)))
                  new-state))
 

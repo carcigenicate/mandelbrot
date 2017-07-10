@@ -1,7 +1,8 @@
-(ns mandelbrot.mandelbrot)
+(ns mandelbrot.mandelbrot
+  (:require [clojure.test :refer [is]]))
 
-(def std-infinity-limit 2M)
-(def std-n-tests 50M)
+(def std-infinity-limit 4M)
+(def std-n-tests 200M)
 
 (defn square-complex [a b]
   [(- (* a a)
@@ -15,14 +16,17 @@
      (+ new-imag seed-imag)]))
 
 (defn test-point-convergence [real imag max-iterations infinity-limit iteration-f]
+  #_
+  {:pre [(is (decimal? real) (decimal? imag))]
+   :post [(is (decimal? %))]}
   (let [limit-sqrd (* infinity-limit infinity-limit)
-        ; TODO: Review terminating condition
+
         under-limit? #(<= (+ (* % %)
                              (* %2 %2))
                           limit-sqrd)]
     (loop [real-acc real
            imag-acc imag
-           iter 0]
+           iter 0M]
 
       (if (and (< iter max-iterations)
                (under-limit? real-acc imag-acc))

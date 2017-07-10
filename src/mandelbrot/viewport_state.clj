@@ -2,7 +2,7 @@
   (:require [quil.core :as q]
             [helpers.general-helpers :as g]))
 
-(def mapping-precision 10)
+(def ^:const mapping-precision 20)
 
 (set! *warn-on-reflection* true)
 
@@ -22,7 +22,7 @@
          {sx-mi :x-min, sx-ma :x-max,
           sy-mi :y-min, sy-ma :y-max} :screen-limits} view-state]
 
-    (with-precision ^long mapping-precision
+    (with-precision mapping-precision
       [(g/map-range x sx-mi sx-ma mx-mi mx-ma)
        (g/map-range y sy-mi sy-ma my-mi my-ma)])))
 
