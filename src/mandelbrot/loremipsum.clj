@@ -1,6 +1,8 @@
 (ns mandelbrot.loremipsum
   (:require [clojure.string :as s]))
 
+; TODO: Move to bits project
+
 (defn rand-word
   "Generates a random word based on what letters appeared at what index.
   If the index doesn't exist, it pulls a random character from the sample-text."
