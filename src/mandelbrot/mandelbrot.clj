@@ -36,6 +36,23 @@
 
         iter))))
 
+(defn test-point-convergence-timing-test [real imag max-iterations infinity-limit iteration-f]
+  (let [limit-sqrd (* infinity-limit infinity-limit)
+
+        under-limit? #(<= (+ (* % %)
+                             (* %2 %2))
+                          limit-sqrd)]
+    (loop [real-acc real
+           imag-acc imag
+           iter 0M]
+
+      (if (< iter max-iterations)
+
+        (let [[new-real new-imag] (iteration-f real-acc imag-acc)]
+          (recur new-real new-imag (inc iter)))
+
+        iter))))
+
 (defn standard-mandelbrot-test-convergence [real imag]
   (test-point-convergence real imag
                           std-n-tests std-infinity-limit

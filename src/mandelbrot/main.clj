@@ -9,6 +9,8 @@
             [mandelbrot.viewport-state :as vs]
             [mandelbrot.input :as i]
             [mandelbrot.locations :as lo]
+            [mandelbrot.mandel-Point :as mp]
+            [mandelbrot.future-results :as fr]
 
             [helpers.general-helpers :as g]
             [helpers.quil-helpers :as qh])
@@ -40,7 +42,7 @@
 
 (def starting-position [0M 0M])
 
-(defrecord Animation-State [viewport-state current-draw-position])
+(defrecord Animation-State [viewport-state current-draw-position results-coll])
 
 (def background-color [10 10 100])
 
@@ -91,12 +93,12 @@
                          (vs/new-zero-based-limits screen-width screen-height))))
 
 (defn setup-state []
-  (q/frame-rate 60)
+  (q/frame-rate 1)
 
   (apply q/background background-color)
 
   (let [view-state (new-viewport-state starting-mandel-limits)]
-    (->Animation-State view-state starting-position)))
+    (->Animation-State view-state starting-position (fr/new-result-container))))
 
 (defn update-state [state]
     (let [{[x y :as starting-pos] :current-draw-position
