@@ -24,7 +24,7 @@
 
 ; ---------- MAIN SETTINGS ----------
 
-(def screen-width 500M)
+(def screen-width 2000M)
 
 (def starting-mandel-limits lo/full-map)
 
@@ -60,30 +60,6 @@
     (qh/with-weight 1
       (q/point x y))))
 
-(defn draw-n-pixels
-  "Draw n-pixels many pixels starting at starting-pos, moving left-right, top-down.
-  Returns the position of the next pixel to be drawn."
-  [n-pixels starting-pos view-state]
-  ; TODO: Eww. a and b are expensive to compute, so I'd rather not have to do it in
-  ; TODO:   test-pixel and this function. Causes bloat though.
-  {:pre [(is (decimal? n-pixels))
-         (is (every? decimal? starting-pos))
-         (is (every? #(-> % second decimal?) (:mandel-limits view-state)))]}
-
-  (with-precision vs/mapping-precision
-
-    (reduce (fn [[acc-x acc-y] _]
-              (let [[a b] (vs/screen-to-mandel acc-x acc-y view-state)
-                    n (test-pixel a b)
-                    color (global-coloring-f a b n)]
-
-                (draw-pixel acc-x acc-y color)
-                (advance-screen-coord acc-x acc-y screen-width)))
-
-            starting-pos
-
-            (range n-pixels))))
-
 (defn new-viewport-state [mandel-limits]
   (vs/->Viewport-State (lo/cast-values-using bigdec mandel-limits)
 
@@ -92,13 +68,13 @@
 
 (defn generate-tasks-for [coords viewport-state]
   (map (fn [[x y]]
-           (let [[a b] (vs/screen-to-mandel x y viewport-state)
-                 n (test-pixel a b)]
-             (mp/->Mandel-Point x y a b n)))
+           #(let [[a b] (vs/screen-to-mandel x y viewport-state)
+                  n (test-pixel a b)]
+              (mp/->Mandel-Point x y a b n)))
        coords))
 
 (defn setup-state []
-  (q/frame-rate 1)
+  (q/frame-rate 60)
 
   (apply q/background background-color)
 
@@ -109,20 +85,17 @@
         chunks (partition pixels-per-chunk tasks)
         state (->Animation-State view-state results-coll chunks)]
 
-       ; TODO; WHERE IS THIS GETTING STUCK?!?
-
     (println "Done setup.")
 
     state))
 
 (defn update-state [state]
-  (println "Starting update...")
-
   (let [{[chunk & rest-chunks] :coord-chunks
          results-coll :results-coll
          view-state :viewport-state} state]
-
+    #_
     (println "Starting" (count chunk) "tasks." (count rest-chunks) "chunks remaining.")
+
     (fr/start-tasks chunk results-coll)
 
     (assoc state :coord-chunks rest-chunks)))
@@ -130,6 +103,8 @@
 (defn draw-state [state]
   (let [{results-coll :results-coll vs :viewport-state} state
         results (fr/flush-results results-coll)]
+
+    (println "Drawing" (count results))
 
     (doseq [{:keys [x y a b n]} results]
       (draw-pixel x y

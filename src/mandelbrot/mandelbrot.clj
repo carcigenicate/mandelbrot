@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [is]]))
 
 (def std-infinity-limit 4M)
-(def std-n-tests 200M)
+(def std-n-tests 10M)
 
 (defn square-complex [a b]
   [(- (* a a)
@@ -16,7 +16,6 @@
      (+ new-imag seed-imag)]))
 
 (defn test-point-convergence [real imag max-iterations infinity-limit iteration-f]
-  #_
   {:pre [(is (decimal? real) (decimal? imag))]
    :post [(is (decimal? %))]}
   (let [limit-sqrd (* infinity-limit infinity-limit)

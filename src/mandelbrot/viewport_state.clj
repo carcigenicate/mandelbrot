@@ -2,7 +2,7 @@
   (:require [quil.core :as q]
             [helpers.general-helpers :as g]))
 
-(def ^:const mapping-precision 20)
+(def ^:const mapping-precision 10) ; TODO: Make ~100?
 
 (set! *warn-on-reflection* true)
 

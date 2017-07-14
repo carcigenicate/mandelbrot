@@ -13,7 +13,6 @@
       results)))
 
 (defn add-result [result-coll result]
-  (println "Adding result..." result)
   (.add ^Collections$SynchronizedCollection result-coll result))
 
 (defn- start-task [task result-ref]
