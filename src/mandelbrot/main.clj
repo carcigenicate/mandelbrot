@@ -9,7 +9,7 @@
             [mandelbrot.viewport-state :as vs]
             [mandelbrot.input :as i]
             [mandelbrot.locations :as lo]
-            [mandelbrot.mandel-Point :as mp]
+            [mandelbrot.mandel-point :as mp]
             [mandelbrot.future-results :as fr]
 
             [helpers.general-helpers :as g]
@@ -38,11 +38,9 @@
 (def screen-ratio 0.68M) ; 0.68 ~= screen ratio
 (def screen-height (* screen-width screen-ratio))
 
-(def draw-pixels-per-frame (* screen-width screen-height 0.01M))
+(def pixels-per-chunk (int (* screen-width screen-height 0.01M)))
 
-(def starting-position [0M 0M])
-
-(defrecord Animation-State [viewport-state current-draw-position results-coll])
+(defrecord Animation-State [viewport-state results-coll coord-chunks])
 
 (def background-color [10 10 100])
 
@@ -92,36 +90,53 @@
                        (lo/cast-values-using bigdec
                          (vs/new-zero-based-limits screen-width screen-height))))
 
+(defn generate-tasks-for [coords viewport-state]
+  (map (fn [[x y]]
+           (let [[a b] (vs/screen-to-mandel x y viewport-state)
+                 n (test-pixel a b)]
+             (mp/->Mandel-Point x y a b n)))
+       coords))
+
 (defn setup-state []
   (q/frame-rate 1)
 
   (apply q/background background-color)
 
-  (let [view-state (new-viewport-state starting-mandel-limits)]
-    (->Animation-State view-state starting-position (fr/new-result-container))))
+  (let [view-state (new-viewport-state starting-mandel-limits)
+        results-coll (fr/new-result-container)
+        coords (mp/rows-of screen-width screen-height)
+        tasks (generate-tasks-for coords view-state)
+        chunks (partition pixels-per-chunk tasks)
+        state (->Animation-State view-state results-coll chunks)]
+
+       ; TODO; WHERE IS THIS GETTING STUCK?!?
+
+    (println "Done setup.")
+
+    state))
 
 (defn update-state [state]
-    (let [{[x y :as starting-pos] :current-draw-position
-           view-state :viewport-state} state
-          output-every (* screen-width screen-height 10)]
+  (println "Starting update...")
 
-      (with-precision 3
-        (println (.toPlainString ^BigDecimal (/ y screen-height 0.01M)) "%\n"
-                 (str (Date.) "\n\n")))
+  (let [{[chunk & rest-chunks] :coord-chunks
+         results-coll :results-coll
+         view-state :viewport-state} state]
 
-      (if (< y screen-height)
-        (do
-          (println "Cur pos:" starting-pos)
+    (println "Starting" (count chunk) "tasks." (count rest-chunks) "chunks remaining.")
+    (fr/start-tasks chunk results-coll)
 
-          (assoc state :current-draw-position
-                       (draw-n-pixels draw-pixels-per-frame
-                                      starting-pos
-                                      view-state)))
+    (assoc state :coord-chunks rest-chunks)))
 
-        state)))
+(defn draw-state [state]
+  (let [{results-coll :results-coll vs :viewport-state} state
+        results (fr/flush-results results-coll)]
+
+    (doseq [{:keys [x y a b n]} results]
+      (draw-pixel x y
+                  (global-coloring-f a b n)))))
 
 (defn key-handler-wrapper [state event]
-  state)
+  state) ; TODO: Write
 
 (defn mouse-handler [state event]
   (when state
@@ -131,18 +146,18 @@
       (update :viewport-state
               #(let [new-state (i/mouse-handler % event)]
                  (println (into {} (:mandel-limits new-state)))
-                 new-state))
-
-
-      (assoc :current-draw-position starting-position))))
+                 new-state)))))
 
 (defn -main []
+  (println "E:")
+  (read-line)
 
   (q/defsketch Mandel
                :size [screen-width screen-height]
 
                :setup setup-state
                :update update-state
+               :draw draw-state
 
                :key-pressed key-handler-wrapper
                :mouse-pressed mouse-handler

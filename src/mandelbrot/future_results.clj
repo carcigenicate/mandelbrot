@@ -3,7 +3,6 @@
 
   (:gen-class))
 
-
 (defn new-result-container []
   (Collections/synchronizedCollection (ArrayList.)))
 
@@ -14,14 +13,15 @@
       results)))
 
 (defn add-result [result-coll result]
-  (.add result-coll result))
+  (println "Adding result..." result)
+  (.add ^Collections$SynchronizedCollection result-coll result))
 
 (defn- start-task [task result-ref]
   (future
     (add-result result-ref
                 (task))))
 
-(defn- start-tasks
+(defn start-tasks
   "Runs all tasks in a new future."
   [tasks result-coll]
   (future
