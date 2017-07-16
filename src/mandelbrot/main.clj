@@ -68,9 +68,10 @@
 
 (defn generate-tasks-for [coords viewport-state]
   (map (fn [[x y]]
-           #(let [[a b] (vs/screen-to-mandel x y viewport-state)
-                  n (test-pixel a b)]
-              (mp/->Mandel-Point x y a b n)))
+           #(with-precision vs/mapping-precision
+              (let [[a b] (vs/screen-to-mandel x y viewport-state)
+                    n (test-pixel a b)]
+                (mp/->Mandel-Point x y a b n))))
        coords))
 
 (defn setup-state []
