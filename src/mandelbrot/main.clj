@@ -38,7 +38,7 @@
 (def screen-ratio 0.68M) ; 0.68 ~= screen ratio
 (def screen-height (* screen-width screen-ratio))
 
-(def pixels-per-chunk (int (* screen-width screen-height 0.01M)))
+(def pixels-per-chunk (int (* screen-width screen-height 0.02M)))
 
 (defrecord Animation-State [viewport-state results-coll coord-chunks])
 

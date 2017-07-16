@@ -1,8 +1,8 @@
 (ns mandelbrot.mandelbrot
   (:require [clojure.test :refer [is]]))
 
-(def std-infinity-limit 4M)
-(def std-n-tests 10M)
+(def std-infinity-limit 2M)
+(def std-n-tests 50M)
 
 (defn square-complex [a b]
   [(- (* a a)
