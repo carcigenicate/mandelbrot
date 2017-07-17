@@ -24,9 +24,11 @@
 
 ; ---------- MAIN SETTINGS ----------
 
-(def screen-width 2000M)
+(def screen-width 300M)
 
-(def starting-mandel-limits lo/full-map)
+(def starting-mandel-limits lo/branch-out)
+
+(def finding-divisions 6)
 
 (def global-coloring-f
   "Should accept three arguments: [a b n]
@@ -38,19 +40,12 @@
 (def screen-ratio 0.68M) ; 0.68 ~= screen ratio
 (def screen-height (* screen-width screen-ratio))
 
-(def pixels-per-chunk (int (* screen-width screen-height 0.02M)))
+(def pixels-per-chunk (with-precision 10
+                        (int (/ (* screen-width screen-height) finding-divisions))))
 
-(defrecord Animation-State [viewport-state results-coll coord-chunks])
+(defrecord Animation-State [viewport-state collector coord-chunks])
 
 (def background-color [10 10 100])
-
-(defn advance-screen-coord [x y width]
-  (let [x' (inc x)
-        new-line? (>= x' width)
-        x'' (if new-line? 0M x')
-        y' (if new-line? (inc y) y)]
-
-    [x'' y']))
 
 (defn test-pixel [a b]
   (m/standard-mandelbrot-test-convergence a b))
@@ -62,29 +57,34 @@
 
 (defn new-viewport-state [mandel-limits]
   (vs/->Viewport-State (lo/cast-values-using bigdec mandel-limits)
-
                        (lo/cast-values-using bigdec
                          (vs/new-zero-based-limits screen-width screen-height))))
 
 (defn generate-tasks-for [coords viewport-state]
   (map (fn [[x y]]
-           #(with-precision vs/mapping-precision
-              (let [[a b] (vs/screen-to-mandel x y viewport-state)
-                    n (test-pixel a b)]
-                (mp/->Mandel-Point x y a b n))))
+         #(with-precision vs/mapping-precision
+            (let [[a b] (vs/screen-to-mandel x y viewport-state)
+                  n (test-pixel a b)]
+              (mp/->Mandel-Point x y a b n))))
        coords))
 
+(defn generate-task-chunks [coords viewport-state]
+  (let [tasks (generate-tasks-for coords viewport-state)]
+    (partition pixels-per-chunk tasks)))
+
+(defn new-chunked-tasks [viewport-state]
+  (let [coords (mp/rows-of screen-width screen-height)]
+    (generate-task-chunks coords viewport-state)))
+
 (defn setup-state []
-  (q/frame-rate 60)
+  (q/frame-rate 20)
 
   (apply q/background background-color)
 
   (let [view-state (new-viewport-state starting-mandel-limits)
-        results-coll (fr/new-result-container)
-        coords (mp/rows-of screen-width screen-height)
-        tasks (generate-tasks-for coords view-state)
-        chunks (partition pixels-per-chunk tasks)
-        state (->Animation-State view-state results-coll chunks)]
+        collector  (fr/new-result-collector)
+        chunks     (new-chunked-tasks view-state)
+        state      (->Animation-State view-state collector chunks)]
 
     (println "Done setup.")
 
@@ -92,19 +92,17 @@
 
 (defn update-state [state]
   (let [{[chunk & rest-chunks] :coord-chunks
-         results-coll :results-coll
+         collector :collector
          view-state :viewport-state} state]
-    #_
-    (println "Starting" (count chunk) "tasks." (count rest-chunks) "chunks remaining.")
 
-    (fr/start-tasks chunk results-coll)
+    (fr/start-tasks collector chunk)
 
     (assoc state :coord-chunks rest-chunks)))
 
 (defn draw-state [state]
-  (let [{results-coll :results-coll vs :viewport-state} state
-        results (fr/flush-results results-coll)]
-
+  (let [{collector :collector vs :viewport-state} state
+        results (fr/get-results collector)]
+    #_
     (println "Drawing" (count results))
 
     (doseq [{:keys [x y a b n]} results]
@@ -115,14 +113,18 @@
   state) ; TODO: Write
 
 (defn mouse-handler [state event]
+  (fr/cancel-tasks (:collector state))
+
   (when state
     (apply q/background background-color)
 
-    (-> state
-      (update :viewport-state
-              #(let [new-state (i/mouse-handler % event)]
-                 (println (into {} (:mandel-limits new-state)))
-                 new-state)))))
+    (let [new-viewport (i/mouse-handler (:viewport-state state) event)]
+      (println (into {} (:mandel-limits new-viewport)))
+
+      (-> state
+          (assoc :viewport-state new-viewport)
+          (assoc :coord-chunks (new-chunked-tasks new-viewport))
+          (assoc :collector (fr/new-result-collector))))))
 
 (defn -main []
   (println "E:")
@@ -139,5 +141,8 @@
                :mouse-pressed mouse-handler
 
                :middleware [mi/fun-mode]
-                #_
-               :on-close))
+
+               :on-close (fn [s]
+                           (fr/cancel-tasks (:collector s))
+                           (System/gc)
+                           (println "Cleanup routine run."))))

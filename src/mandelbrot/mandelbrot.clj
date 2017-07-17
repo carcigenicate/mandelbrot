@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [is]]))
 
 (def std-infinity-limit 2M)
-(def std-n-tests 50M)
+(def std-n-tests 200M)
 
 (defn square-complex [a b]
   [(- (* a a)
