@@ -18,9 +18,13 @@
     <orderEntry type="library" name="Leiningen: bouncycastle/bcmail-jdk14:138" level="project" />
     <orderEntry type="library" name="Leiningen: bouncycastle/bcprov-jdk14:138" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.4" level="project" />
+    <orderEntry type="library" name="Leiningen: com.fifesoft/rsyntaxtextarea:2.5.6" level="project" />
+    <orderEntry type="library" name="Leiningen: com.jgoodies/forms:1.2.1" level="project" />
     <orderEntry type="library" name="Leiningen: com.lowagie/itext:2.1.7" level="project" />
+    <orderEntry type="library" name="Leiningen: com.miglayout/miglayout:3.7.4" level="project" />
     <orderEntry type="library" name="Leiningen: criterium:0.4.4" level="project" />
     <orderEntry type="library" name="Leiningen: helpers:1" level="project" />
+    <orderEntry type="library" name="Leiningen: j18n:1.0.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.xmlgraphics/batik-awt-util:1.8" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.xmlgraphics/batik-css:1.8" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.xmlgraphics/batik-dom:1.8" level="project" />
@@ -41,6 +45,12 @@
     <orderEntry type="library" name="Leiningen: org.clojure/tools.nrepl:0.2.12" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.reader:1.0.0-beta4" level="project" />
     <orderEntry type="library" name="Leiningen: org.ow2.asm/asm-all:4.2" level="project" />
+    <orderEntry type="library" name="Leiningen: org.swinglabs.swingx/swingx-action:1.6.3" level="project" />
+    <orderEntry type="library" name="Leiningen: org.swinglabs.swingx/swingx-autocomplete:1.6.3" level="project" />
+    <orderEntry type="library" name="Leiningen: org.swinglabs.swingx/swingx-common:1.6.3" level="project" />
+    <orderEntry type="library" name="Leiningen: org.swinglabs.swingx/swingx-core:1.6.3" level="project" />
+    <orderEntry type="library" name="Leiningen: org.swinglabs.swingx/swingx-painters:1.6.3" level="project" />
+    <orderEntry type="library" name="Leiningen: org.swinglabs.swingx/swingx-plaf:1.6.3" level="project" />
     <orderEntry type="library" name="Leiningen: quil/gluegen-rt-fat:2.3.2" level="project" />
     <orderEntry type="library" name="Leiningen: quil/jogl-all-fat:2.3.2" level="project" />
     <orderEntry type="library" name="Leiningen: quil/processing-core:3.2.4" level="project" />
@@ -49,6 +59,7 @@
     <orderEntry type="library" name="Leiningen: quil/processing-pdf:3.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: quil/processing-svg:3.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: quil:2.6.0" level="project" />
+    <orderEntry type="library" name="Leiningen: seesaw:1.4.5" level="project" />
     <orderEntry type="library" name="Leiningen: xalan:2.7.0" level="project" />
     <orderEntry type="library" name="Leiningen: xml-apis/xml-apis-ext:1.3.04" level="project" />
     <orderEntry type="library" name="Leiningen: xml-apis:1.3.04" level="project" />
