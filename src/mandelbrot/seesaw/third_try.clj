@@ -1,4 +1,4 @@
-(ns mandelbrot.seesaw.second-try
+(ns mandelbrot.seesaw.third-try
   (:require [seesaw.core :as sc]
             [seesaw.dev :as sd]
             [seesaw.color :as s-col]
@@ -11,24 +11,22 @@
             [mandelbrot.mandelbrot-iteration :as mi]
             [mandelbrot.locations :as l]
             [mandelbrot.concurrent-finder :as cf]
-            [mandelbrot.seesaw.helpers :as sh])
+            [mandelbrot.seesaw.helpers :as sh]
+            [mandelbrot.coloring :as co])
 
   (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
            [java.util Date]))
 
 (def window-width 700)
-(def window-ratio 1.5)
+(def window-ratio 1)
 (def window-height (/ window-width window-ratio))
 
-; FIXME: NEED A WAY TO STOP PROCESSING OF BACKGROUND CALCULATIONS.
-; FIXME: CHANGE FROM DOSEQ TO EXPLICIT LOOP, AND CONTROL VIA A FLAG?
+(def zoom-perc 0.90)
 
-(def zoom-perc 0.99999999999)
-
-(def chunk-perc (double 1/5))
+(def chunk-perc (double 1/10))
 
 (def standard-limits
-  (assoc l/center-spiral
+  (assoc l/swirl
     :rep-width window-width
     :rep-height window-height) ; Awful workaround!
   #_
@@ -42,36 +40,41 @@
 (def global-finder-pair
   (atom nil))
 
+(def global-results
+  (atom []))
+
+(def color-f co/exp)
+
+#_
 (defn color-f [x y iters]
   (let [w #(g/wrap % 0 255)
         c #(g/clamp % 0 255)
-        w-i (w iters)]
+        w-i (w iters)
+        fact 0.01]
 
-    (s-col/color (c (* x iters 10)) (c (* y iters 5)) (w (* iters 2)))))
+    (s-col/color (c (* iters iters iters fact x)) (c (* iters iters fact y)) (c (* iters fact)))))
 
-(defn paint [chnk c g]
-  (doseq [{:keys [r i, rep-x rep-y, iters]} chnk]
-    (sg/draw g
-             (sg/rect rep-x rep-y 1 1)
-             (sg/style :background (color-f r i iters)))))
+(defn paint [c g]
+  (let [chunks @global-results]
+    (doseq [chunk chunks]
+      (doseq [{:keys [r i, rep-x rep-y, iters]} chunk]
+        (sg/draw g
+           (sg/rect rep-x rep-y 1 1)
+           (sg/style :background (color-f r i iters)))))))
 
-(defn paint-map [chnk]
-  {:after (partial paint chnk), :super? false})
+(defn paint-map []
+  {:after paint, :super? true})
 
 (defn start-point-supplier [limits]
-  (cf/point-calculator-component chunk-perc limits)) ; TODO: Test!
+  (cf/point-calculator-component2 chunk-perc limits))
 
 (defn start-receiving! [canvas chunk-chan]
   (go-loop []
     (when-let [chunk (<! chunk-chan)]
-      ; Blocking. Need to make sure we aren't flooding paint requests while one is still running
-      (sc/invoke-now
-        (sc/config! canvas :paint (paint-map chunk))
-        (sc/repaint! canvas))
+      (swap! global-results #(conj % chunk))
       (recur))))
 
 (defn stop-current-process! []
-  (println "Stopping...")
   (swap! global-finder-pair
     #(when-let [[_ stop-f] %]
        (stop-f)
@@ -81,9 +84,11 @@
   "Stops a running process (if ones already been started), and start a new one for the current limits."
   [cvs]
   (let [limits @global-limits]
+    #_
     (println "Starting finder for" limits)
 
     (stop-current-process!)
+    (reset! global-results [])
 
     (reset! global-finder-pair
       (let [[point-chan :as pair] (start-point-supplier limits)]
@@ -108,23 +113,42 @@
                               (sh/move-limits-to r i)
                               (sh/zoom-limits-by-perc left-click? zoom-perc)))
 
-    (reset-finder-process! canvas)
-    (sc/config! canvas :paint (constantly nil))))
+    (reset-finder-process! canvas)))
+
+(defn save-handler [canvas _]
+  (println "Saving...")
+
+  (sh/save-snapshot @global-limits
+    (sh/get-snapshot canvas)))
 
 (defn canvas []
-  (let [cvs (sc/canvas :id :canvas)]
+  (let [cvs (sc/canvas :id :canvas
+                       :paint (paint-map))]
     (sc/listen cvs
       :mouse-clicked (partial mouse-handler cvs))
 
     cvs))
 
+(defn save-button [canvas]
+  (sc/button :text "Save"
+             :listen [:action (partial save-handler canvas)]))
+
 (defn panel []
   (let [cvs (canvas)
+        save-btn (sc/button :text "Save"
+                            :listen [:action (partial save-handler cvs)])
         bp (sc/border-panel
-             :center cvs)]
+             :center cvs
+             :south (sc/flow-panel :items [save-btn]
+                                   :align :center))]
+
 
     (println "Loading...")
-    (time (reset-finder-process! cvs))
+    (reset-finder-process! cvs)
+
+    (sc/timer
+      (fn [_] (sc/repaint! cvs))
+      :delay 500)
 
     bp))
 
