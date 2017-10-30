@@ -4,7 +4,8 @@
             [mandelbrot.coloring :as co]
 
             [clojure.core.async :refer [<!!]]
-            [helpers.general-helpers :as g])
+            [helpers.general-helpers :as g]
+            [seesaw.core :as sc])
 
   (:import [java.awt.image BufferedImage]
            [java.awt Color Graphics2D RenderingHints]
@@ -40,6 +41,7 @@
 
     img))
 
+; Accepts a (potentially lazy) list of points to process, instead of a channel.
 (defn draw-image-in-limits2 [limits points color-f chunk-f]
   (let [{:keys [rep-width rep-height]} limits
         img (new-image-for-limits limits)]
@@ -62,14 +64,33 @@
     (str "([" start-r "," end-r "] - [" start-i "," end-i "])")))
 
 (defn save-image [limits, ^BufferedImage img]
-  (let [file-name (str (limits->std-name limits) "-" (g/current-ms-timestamp))]
-    (ImageIO/write img
-                   ^String save-ext
-                   (File. (str save-path file-name "." save-ext)))))
+  (let [file-name (str (limits->std-name limits) "-" (g/current-ms-timestamp))
+        path (str save-path file-name "." save-ext)]
+    (clojure.java.io/make-parents path)
+
+    (ImageIO/write img, ^String save-ext, (File. path))))
 
 (defn perc-done [current-n limits]
   (let [{:keys [rep-width rep-height]} limits]
     (double (/ current-n (* rep-width rep-height)))))
+
+(defn canvas-saver [prog-bar color-f save-limits]
+  (let [perc #(perc-done % save-limits)
+        {:keys [rep-width rep-height]} save-limits
+        total (* rep-width rep-height)
+        update-perc 0.01
+        update-every (int (* total update-perc))
+
+        points (cf/lazy-par-calc-points save-limits)
+
+        img (draw-image-in-limits2 save-limits points color-f
+              (fn [n c]
+                (when (zero? (rem n update-every))
+                  (sc/invoke-later
+                    (sc/value! prog-bar (* 100 (perc n)))))))]
+
+    (save-image save-limits img)))
+
 
 (defn test-routine []
   (let [r-width 5472
@@ -93,7 +114,4 @@
     (println "Image drawn...")
 
     (save-image l img)
-    (println "Saved!")
-
-    (println "Stopped.")))
-
+    (println "Saved!")))

@@ -1,9 +1,8 @@
 (ns mandelbrot.main
-  (:require [mandelbrot.image-producer.producer :as mp])
+  (:require [mandelbrot.seesaw.third-try :as ui]
+            [seesaw.core :as sc])
   (:gen-class))
 
 (defn -main []
-  (println "...")
-  (read-line)
-
-  (mp/test-routine))
+  (-> (ui/frame)
+      (sc/show!)))
