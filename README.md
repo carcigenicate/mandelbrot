@@ -10,7 +10,7 @@ Download from http://example.com/FIXME.
 
     $ java -jar mandelbrot-0.1.0-standalone.jar [args]
 
-Where args is either nothing, or coordinates defining the location to start at.
+Where `args` is either nothing, or coordinates defining the location to start at.
 
 The starting location is given as start-real, end-real, start-imaginary, end-imaginary coordinates.
  - start-r(eal) is the left hand area bound
