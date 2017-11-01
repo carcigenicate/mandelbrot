@@ -32,9 +32,6 @@
         center-r (double (+ start-r (/ width 2) r-offset))
         center-i (double (+ start-i (/ height 2) i-offset))]
 
-    (println "Start-r" start-r " Center-r" center-r
-             "Start-i" start-i " Center-i" center-i)
-
     (move-limits-to limits center-r center-i)))
 
 (defn zoom-limits

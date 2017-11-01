@@ -35,13 +35,13 @@
 (def default-save-width 5472)
 (def save-width-ratio 2/3)
 
-(def starting-limits
+(def default-starting-limits
   (assoc l/full-map
     :rep-width default-window-width
     :rep-height default-window-height)) ; Awful workaround!
 
 (def global-limits!
-  (atom starting-limits))
+  (atom default-starting-limits))
 
 (def global-finder-pair!
   (atom nil))
@@ -250,7 +250,14 @@
   (doseq [t timers]
     (.stop ^Timer t)))
 
-(defn frame []
+(defn frame [& [start-r end-r, start-i end-i]]
+  (reset! global-limits! (if start-r
+                           (cf/->Mandelbrot-Limits start-r end-r,
+                                                   start-i end-i
+                                                   default-window-width
+                                                   default-window-height)
+                           default-starting-limits))
+
   (let [f (sc/frame :size [default-window-width :by default-window-height]
                     :content (panel))
 
@@ -264,7 +271,8 @@
     (sc/listen f
        :window-closing
        (fn [_] (stop-current-process!)
-               (stop-timers resize-timer repaint-timer)))
+               (stop-timers resize-timer repaint-timer)
+               (println "Final Cleanup Performed.")))
 
     (sc/request-focus! f)
 

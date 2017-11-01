@@ -146,6 +146,6 @@
 
               (when (= (count @pending-jobs!) 0)
                 (stop-f)
-                (println "Done. Stopped.")))))))
+                #_(println "Done. Stopped.")))))))
 
     [out-chan stop-f]))
