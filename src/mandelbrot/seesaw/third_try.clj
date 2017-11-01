@@ -16,30 +16,32 @@
             [mandelbrot.image-producer.producer :as mp])
 
   (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
-           [java.util Date]))
+           [java.util Date]
+           [java.awt Canvas]
+           (javax.swing Timer)))
 
 ; TODO: Global frame!?
 
-(def window-width 800)
-(def window-ratio 1.5)
-(def window-height (/ window-width window-ratio))
+(def default-window-width 800)
+(def default-window-ratio 1.5)
+(def default-window-height (/ default-window-width default-window-ratio))
 
 (def zoom-perc 0.90)
 
-(def text-font "Arial-30-Bold")
+(def text-font "Arial-40-Bold")
 
-(def chunk-perc (double 1/20))
+(def chunk-perc (double 1/15))
 
 (def default-save-width 5472)
 (def save-width-ratio 2/3)
 
-(def standard-limits
+(def starting-limits
   (assoc l/full-map
-    :rep-width window-width
-    :rep-height window-height)) ; Awful workaround!
+    :rep-width default-window-width
+    :rep-height default-window-height)) ; Awful workaround!
 
 (def global-limits!
-  (atom standard-limits))
+  (atom starting-limits))
 
 (def global-finder-pair!
   (atom nil))
@@ -161,24 +163,50 @@
 
     save-panel))
 
+(defn new-movement-bar [cvs]
+  (let [handler (fn [sym-code r-dir i-dir _]
+                  (swap! global-limits!
+                         (fn [l]
+                           (let [[r-off i-off] (map #(/ % 2) (sh/limit-dimensions l))]
+                             (sh/move-limits-by l (* r-dir r-off) (* i-dir i-off)))))
+
+                  (reset-finder-process! cvs))
+
+        b #(sc/button :text (str (char %)), :font text-font
+                      :listen [:action (partial handler % %2 %3)])
+
+        p (sc/flow-panel
+            :items [(b 8593 0 -1) ; Up
+                    (b 8595 0 1) ; Down
+                    (b 8592 -1 0) ; Left
+                    (b 8594 1 0)])] ; Right
+
+    p))
+
+
 (defn new-color-picker [cvs]
   (let [b #(sc/button :font text-font :text (str %)
-                      :listen [:action (fn [_] (reset! global-color-f! %2)
-                                               (sc/repaint! cvs))])
+                      :listen [:action
+                               (fn [_] (reset! global-color-f! %2)
+                                       (sc/repaint! cvs))])
         label (sc/label :font text-font, :text "Colors")
         buttons (map b (range) color-options)
         panel (sc/vertical-panel :items (conj buttons label))]
 
     panel))
 
-(defn new-location-picker [cvs]
-  (let [label (sc/label :font text-font, :text "Locations")
+(defn new-location-picker [root-frame]
+  (let [cvs (sc/select root-frame [:#canvas])
+        label (sc/label :font text-font, :text "Locations")
         b #(sc/button :font text-font, :text (str %)
                       :halign :center
-                      :listen [:action (fn [_] (reset! global-limits!
-                                                       (assoc %2 :rep-width window-width
-                                                                 :rep-height window-height))
-                                               (reset-finder-process! cvs))])
+                      :listen [:action
+                               (fn [_]
+                                 (let [[w h] (sh/get-dimensions root-frame)]
+                                   (reset! global-limits!
+                                           (assoc %2 :rep-width w
+                                                     :rep-height h))
+                                   (reset-finder-process! cvs)))])
         buttons (map b (range) location-options)
         panel (sc/vertical-panel :items (conj buttons label))]
 
@@ -189,30 +217,55 @@
 
         bp (sc/border-panel
              :center cvs
+             :north (new-movement-bar cvs)
              :east (new-color-picker cvs)
              :west (new-location-picker cvs))
 
         sp (new-save-panel bp)]
 
-
     (println "Loading...")
     (reset-finder-process! cvs)
-
-    (sc/timer
-      (fn [_] (sc/repaint! cvs))
-      :delay 1000)
 
     (sc/config! bp :south sp)
 
     bp))
 
+(defn resize-checking-timer [root-frame check-delay]
+  (let [cvs [(sc/select root-frame [:#canvas])]]
+    (sc/timer
+      (fn [_]
+        (let [updated? (atom false)] ; Eww!
+          (swap! global-limits!
+                 #(let [{:keys [rep-width rep-height]} %
+                        [w h] (sh/get-dimensions root-frame)]
+                    (reset! updated? (or (not= w rep-width) (not= h rep-height)))
+                    (assoc % :rep-width w, :rep-height h)))
+
+          (when @updated?
+            (reset-finder-process! cvs))))
+
+      :delay check-delay)))
+
+(defn stop-timers [& timers]
+  (doseq [t timers]
+    (.stop ^Timer t)))
+
 (defn frame []
-  (let [f (sc/frame :size [window-width :by window-height]
-                    :content (panel)
-                    :resizable? false)]
+  (let [f (sc/frame :size [default-window-width :by default-window-height]
+                    :content (panel))
+
+        cvs (sc/select f [:#canvas])
+
+        resize-timer (resize-checking-timer f 2500)
+
+        repaint-timer (sc/timer (fn [_] (sc/repaint! cvs))
+                                :delay 1000)]
 
     (sc/listen f
        :window-closing
-       (fn [_] (stop-current-process!)))
+       (fn [_] (stop-current-process!)
+               (stop-timers resize-timer repaint-timer)))
+
+    (sc/request-focus! f)
 
     f))

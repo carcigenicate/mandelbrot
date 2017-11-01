@@ -6,20 +6,36 @@
            (java.util Date)
            (java.io File)))
 
-(defn get-size [component]
+(defn get-dimensions [component]
   (let [^Dimension dims (sc/config component :size)]
     [(.width dims) (.height dims)]))
 
-(defn move-limits-to [enclosing-limits center-x center-y]
-  (let [{:keys [start-r end-r, start-i end-i]} enclosing-limits
-        plane-dims [(- end-r start-r) (- end-i start-i)]
+(defn limit-dimensions [limits]
+  (let [{:keys [start-r end-r, start-i end-i]} limits]
+
+    [(- end-r start-r)
+     (- end-i start-i)]))
+
+(defn move-limits-to [limits center-r center-i]
+  (let [plane-dims (limit-dimensions limits)
         [h-width h-height] (mapv #(/ % 2) plane-dims)]
 
-    (assoc enclosing-limits
-      :start-r (- center-x h-width)
-      :end-r (+ center-x h-width)
-      :start-i (- center-y h-height)
-      :end-i (+ center-y h-height))))
+    (assoc limits
+      :start-r (- center-r h-width)
+      :end-r (+ center-r h-width)
+      :start-i (- center-i h-height)
+      :end-i (+ center-i h-height))))
+
+(defn move-limits-by [limits r-offset i-offset]
+  (let [{:keys [start-r start-i]} limits
+        [width height] (limit-dimensions limits)
+        center-r (double (+ start-r (/ width 2) r-offset))
+        center-i (double (+ start-i (/ height 2) i-offset))]
+
+    (println "Start-r" start-r " Center-r" center-r
+             "Start-i" start-i " Center-i" center-i)
+
+    (move-limits-to limits center-r center-i)))
 
 (defn zoom-limits
   "Zooms a limit view in or out, depending on the in? parameter."
@@ -44,8 +60,6 @@
         half-dims (mapv #(/ % 2) view-dims)
 
         zoom-by (* zoom-perc (apply min half-dims))]
-
-    (println "Zoom by" zoom-by)
 
     (zoom-limits limits in? zoom-by)))
 

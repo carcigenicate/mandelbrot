@@ -9,6 +9,6 @@
 
   :main mandelbrot.main
 
-  :target-path "target2/%s"
+  :target-path "target/%s"
 
   :profiles {:uberjar {:aot :all}})
