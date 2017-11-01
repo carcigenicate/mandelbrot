@@ -4,7 +4,13 @@ FIXME: description
 
 ## Installation
 
-Download from http://example.com/FIXME.
+To make a jar, you'll need Leiningen.
+
+Create a jar using:
+
+    lein uberjar
+
+In the directory containing `project.clj`.
 
 ## Usage
 
