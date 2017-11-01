@@ -27,3 +27,5 @@ The starting location is given as start-real, end-real, start-imaginary, end-ima
  To start with a zoomed out view of the lower right corner, use:
 
     $ java -jar mandelbrot-0.1.0-standalone.jar 0 1 0 1
+
+Once the UI opens, you can zoom and move to where ever you want.
