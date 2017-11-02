@@ -22,7 +22,7 @@
 
 ; TODO: Global frame!?
 
-(def default-window-width 800)
+(def default-window-width 1000)
 (def default-window-ratio 1.5)
 (def default-window-height (/ default-window-width default-window-ratio))
 
@@ -69,7 +69,7 @@
   {:after paint, :super? true})
 
 (defn start-point-supplier [limits]
-  (cf/point-calculator-component2 chunk-perc limits))
+  (cf/point-calculator-component chunk-perc limits))
 
 (defn start-receiving! [canvas chunk-chan]
   (go-loop []

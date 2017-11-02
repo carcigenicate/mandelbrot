@@ -23,7 +23,6 @@
 
       [r i rx ry])))
 
-
 (defn calc-iter-point [r i rep-x rep-y]
   (mi/->Point r i rep-x rep-y (mi/standard-mandelbrot-test-convergence r i)))
 
@@ -33,7 +32,6 @@
 (defn lazy-par-calc-points [limits]
   (pmap (partial apply calc-iter-point) (generate-check-points limits)))
 
-; Slightly faster with smaller draws. Took 75s vs 12s
 (defn future-rows [limits]
   (let [{:keys [start-r end-r start-i end-i rep-width rep-height]} limits
         field-width (- end-r start-r)
@@ -77,10 +75,12 @@
               (println "Finished" i)
               (>! out-chan processed-chunk))))))
 
-
     out-chan))
 
-(defn calc-loop [running!? chunk]
+(defn calc-loop
+  "Terminates as soon as the running!? atom is read as false.
+  Returns [] if terminated, otherwise it returns the calculated chunk."
+  [running!? chunk]
   (reduce (fn [acc point]
             (if @running!?
               (conj acc (apply calc-iter-point point))
@@ -93,7 +93,7 @@
   and calculates all the points for each chunk.
 
   Returns a pair of [result-chan stop-f]
-  Where result-chan is a channel holding the calculated chunks, and stop-f is a 0-arity function that stops further
+  Where result-chan is a channel that supplies the calculated chunks, and stop-f is a 0-arity function that stops further
   calculations from happening when called, and closes result-chan."
   [percent-divisions limits]
   (let [{:keys [rep-width rep-height]} limits
@@ -104,14 +104,14 @@
                     (close! out-chan))]
 
     (go
-      (let [pts (vec (generate-check-points limits))
+      (let [pts (generate-check-points limits)
             parted (partition chunk-size pts)
             pending-jobs! (atom (into #{} (range (count parted))))]
 
         (doseq [[i chunk] (map vector (range) parted)]
           (thread
             (let [processed-chunk (calc-loop running!? chunk)]
-              #_(println "Finished" i "/" (dec (count parted)))
+              #_(println "Finished" (inc i) "/" (count parted))
               (>!! out-chan processed-chunk)
               (swap! pending-jobs! #(disj % i))
 
