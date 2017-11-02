@@ -78,7 +78,7 @@
   (let [perc #(perc-done % save-limits)
         {:keys [rep-width rep-height]} save-limits
         total (* rep-width rep-height)
-        update-perc 0.01
+        update-perc 0.005
         update-every (int (* total update-perc))
 
         points (cf/lazy-par-calc-points save-limits)
@@ -90,7 +90,6 @@
                     (sc/value! prog-bar (* 100 (perc n)))))))]
 
     (save-image save-limits img)))
-
 
 (defn test-routine []
   (let [r-width 5472

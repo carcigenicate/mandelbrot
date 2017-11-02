@@ -60,6 +60,10 @@
 
     (zoom-limits limits in? zoom-by)))
 
+(defn available-processors []
+  (doto (.availableProcessors (Runtime/getRuntime))
+        (println "available processors")))
+
 (defn get-snapshot [^Component canvas]
   (let [^Image img (BufferedImage. (.getWidth canvas) (.getHeight canvas)
                                    BufferedImage/TYPE_INT_RGB)]

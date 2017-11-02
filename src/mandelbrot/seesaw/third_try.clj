@@ -30,7 +30,7 @@
 
 (def text-font "Arial-40-Bold")
 
-(def chunk-perc (double 1/15))
+(def chunk-perc (double (/ 1 (* (sh/available-processors) 2))))
 
 (def default-save-width 5472)
 (def save-width-ratio 2/3)
@@ -49,7 +49,8 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy])
+(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy, co/super-crazy
+                    co/testing])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral, l/tentacle-example])
 
@@ -146,7 +147,7 @@
 
 (defn new-save-panel [root]
   (let [slider-label (sc/label :text (str default-save-width), :font text-font)
-        width-slider (sc/slider :min 500, :max 10000, :id :save-width-slider)
+        width-slider (sc/slider :min 500, :max 20000, :id :save-width-slider)
         slider-panel (sc/horizontal-panel :items [width-slider slider-label])
         pb (sc/progress-bar :min 0, :max 100, :value 0
                             :id :save-progress)

@@ -96,38 +96,9 @@
   Where result-chan is a channel holding the calculated chunks, and stop-f is a 0-arity function that stops further
   calculations from happening when called, and closes result-chan."
   [percent-divisions limits]
-  (let [{:keys [start-r end-r start-i end-i rep-width rep-height]} limits
-        chunk-size (int (* rep-width rep-height percent-divisions))
-        out-chan (chan chunk-size) ; Probably not a great number
-        running!? (atom true)
-        stop-f #(do (reset! running!? false)
-                    (close! out-chan))]
-
-    (go
-      (let [pts (generate-check-points start-r end-r start-i end-i rep-width rep-height)
-            parted (partition chunk-size pts)
-            last-i (dec (count parted))]
-
-        (doseq [[i chunk] (map vector (range) parted)]
-          (go
-            (let [processed-chunk (calc-loop running!? chunk)]
-              #_(println "Finished" i "/" (dec (count parted)))
-              (>! out-chan processed-chunk))))))
-
-    [out-chan stop-f]))
-
-; TODO: Needs to close itself when finished. A Set?
-(defn point-calculator-component2
-  "Divides the screen into parts, each percent-divisions large (with a percent of 0.5, there will be 2 divisions),
-  and calculates all the points for each chunk.
-
-  Returns a pair of [result-chan stop-f]
-  Where result-chan is a channel holding the calculated chunks, and stop-f is a 0-arity function that stops further
-  calculations from happening when called, and closes result-chan."
-  [percent-divisions limits]
   (let [{:keys [rep-width rep-height]} limits
         chunk-size (int (* rep-width rep-height percent-divisions))
-        out-chan (chan chunk-size) ; Probably not a great number
+        out-chan (chan chunk-size)
         running!? (atom true)
         stop-f #(do (reset! running!? false)
                     (close! out-chan))]

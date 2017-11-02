@@ -13,9 +13,9 @@
 
 (defn lava [x y n]
   (co
-    (cl (* n n n))
-    (cl (* n n))
-    (cl n)))
+    (cl (* n n n 0.5))
+    (cl (* n n 0.5))
+    (cl (* n 0.5))))
 
 (defn exp [x y n]
   (co (wr (* x n 4))
@@ -41,3 +41,13 @@
   (co (wr (* x n 5))
       (wr (* y n 3))
       (wr (* x y n n))))
+
+(defn super-crazy [x y n]
+  (crazy (* x 2)
+         (* y 2)
+         (* n 2)))
+
+(defn testing [x y n]
+  (co (wr (* x y))
+      (wr (* x n))
+      (wr (* y n))))
