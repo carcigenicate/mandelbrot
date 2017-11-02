@@ -29,3 +29,5 @@ The starting location is given as start-real, end-real, start-imaginary, end-ima
     $ java -jar mandelbrot-0.1.0-standalone.jar 0 1 0 1
 
 Once the UI opens, you can zoom and move to where ever you want.
+
+The slider accross the bottom decides the width of the saved image. The height will be 2/3 of the chosen width.
