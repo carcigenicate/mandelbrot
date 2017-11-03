@@ -50,10 +50,11 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy, co/super-crazy
-                    co/testing])
+(def color-options [co/lava, co/tentacles, co/exp, co/exp2,
+                    co/dull, co/crazy, co/super-crazy, co/testing])
 
-(def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral, l/tentacle-example])
+(def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
+                       l/tentacle-example, l/evolving-swirls])
 
 (def global-color-f! (atom co/exp))
 
@@ -152,7 +153,7 @@
 (defn new-save-panel [root]
   (let [slider-label (sc/label :text (str default-save-width), :font text-font)
         time-label (sc/label :font text-font, :id :time-remaining)
-        width-slider (sc/slider :min 500, :max 30000, :id :save-width-slider)
+        width-slider (sc/slider :min 500, :max 25000, :id :save-width-slider)
         slider-panel (sc/horizontal-panel :items [slider-label width-slider time-label])
         pb (sc/progress-bar :min 0, :max 100, :value 0
                             :id :save-progress)

@@ -11,7 +11,7 @@
            [java.awt Color Graphics2D RenderingHints]
            [java.io File]
            [javax.imageio ImageIO]
-           (java.util Date)))
+           [java.util Date]))
 
 (def save-path "./saves/")
 
@@ -85,7 +85,7 @@
 
       (double (/ ms-remaining 1000 60)))))
 
-(defn formatted-time-left [jobs-completed total-jobs ms-elapsed]
+(defn formatted-mins-left [jobs-completed total-jobs ms-elapsed]
   (str (format "%.2f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
        " mins"))
 
@@ -104,12 +104,11 @@
 
         img (draw-image-in-limits2 save-limits points color-f
               (fn [n c]
-                (when (zero? (rem n update-every))
-                  (sc/invoke-later
-                    (sc/value! prog-bar (* 100 (perc n)))
-                    (sc/text! time-label
-                              (formatted-time-left n total (- (t) start-ms)))))))]
-
+               (when (zero? (rem n update-every))
+                 (sc/invoke-later
+                   (sc/value! prog-bar (* 100 (perc n)))
+                   (sc/text! time-label
+                             (formatted-mins-left n total (- (t) start-ms)))))))]
 
     (save-image save-limits img)))
 

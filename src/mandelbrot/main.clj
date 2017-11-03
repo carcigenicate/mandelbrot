@@ -11,7 +11,5 @@
 
         good-args (if valid? parsed [])]
 
-    (println std-args parsed valid? good-args)
-
     (-> (apply ui/frame good-args)
         (sc/show!))))
