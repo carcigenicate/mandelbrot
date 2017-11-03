@@ -60,11 +60,12 @@
         img))))
 
 (defn limits->std-name [limits]
-  (let [{:keys [start-r end-r, start-i end-i]} limits]
-    (str "([" start-r "," end-r "] - [" start-i "," end-i "])")))
+  (let [{:keys [start-r end-r, start-i end-i]} limits
+        f #(format "%0.16f" %)]
+    (str (f start-r) " " (f end-r) " " (f start-i) " " (f end-i))))
 
 (defn save-image [limits, ^BufferedImage img]
-  (let [file-name (str (limits->std-name limits) "-" (g/current-ms-timestamp))
+  (let [file-name (str (limits->std-name limits) " Date:" (g/current-ms-timestamp))
         path (str save-path file-name "." save-ext)]
     (clojure.java.io/make-parents path)
 
@@ -74,20 +75,41 @@
   (let [{:keys [rep-width rep-height]} limits]
     (double (/ current-n (* rep-width rep-height)))))
 
-(defn canvas-saver [prog-bar color-f save-limits]
+(defn minutes-remaining [jobs-completed total-jobs ms-elapsed]
+  (if (zero? jobs-completed)
+    0.0
+
+    (let [ms-per (/ ms-elapsed jobs-completed)
+          remaining-jobs (- total-jobs jobs-completed)
+          ms-remaining (* remaining-jobs ms-per)]
+
+      (double (/ ms-remaining 1000 60)))))
+
+(defn formatted-time-left [jobs-completed total-jobs ms-elapsed]
+  (str (format "%.2f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
+       " mins"))
+
+(defn canvas-saver [prog-bar time-label color-f save-limits]
   (let [perc #(perc-done % save-limits)
         {:keys [rep-width rep-height]} save-limits
+
         total (* rep-width rep-height)
-        update-perc 0.005
+        update-perc 0.01
         update-every (int (* total update-perc))
 
         points (cf/lazy-par-calc-points save-limits)
+
+        t #(g/current-ms-timestamp)
+        start-ms (t)
 
         img (draw-image-in-limits2 save-limits points color-f
               (fn [n c]
                 (when (zero? (rem n update-every))
                   (sc/invoke-later
-                    (sc/value! prog-bar (* 100 (perc n)))))))]
+                    (sc/value! prog-bar (* 100 (perc n)))
+                    (sc/text! time-label
+                              (formatted-time-left n total (- (t) start-ms)))))))]
+
 
     (save-image save-limits img)))
 

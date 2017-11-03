@@ -28,12 +28,13 @@
 
 (def zoom-perc 0.90)
 
-(def text-font "Arial-40-Bold")
-
-(def chunk-perc (double (/ 1 (* (sh/available-processors) 2))))
+(def text-font "Arial-15")
+(def stat-font "Arial-15")
 
 (def default-save-width 5472)
 (def save-width-ratio 2/3)
+
+(def chunk-perc (delay (double (/ 1 (* (sh/available-processors) 2)))))
 
 (def default-starting-limits
   (assoc l/full-map
@@ -69,7 +70,7 @@
   {:after paint, :super? true})
 
 (defn start-point-supplier [limits]
-  (cf/point-calculator-component chunk-perc limits))
+  (cf/point-calculator-component @chunk-perc limits))
 
 (defn start-receiving! [canvas chunk-chan]
   (go-loop []
@@ -121,17 +122,20 @@
 (defn save-handler [root _]
   (println "Saving...")
   (let [prog-bar (sc/select root [:#save-progress])
+        time-label (sc/select root [:#time-remaining])
         slider (sc/select root [:#save-width-slider])
         width (sc/value slider)
         height (* width save-width-ratio)]
 
     (future
-      (mp/canvas-saver prog-bar @global-color-f!
+      (mp/canvas-saver prog-bar time-label
+                       @global-color-f!
                        (assoc @global-limits! :rep-width width,
                                               :rep-height height))
       (println "Saved.")
       (sc/invoke-later
-        (sc/value! prog-bar 0)))))
+        (sc/value! prog-bar 0)
+        (sc/text! time-label "")))))
 
 (defn canvas []
   (let [cvs (sc/canvas :id :canvas
@@ -142,13 +146,14 @@
     cvs))
 
 (defn save-button [root]
-  (sc/button :text "Save"
+  (sc/button :text "Save", :font text-font
              :listen [:action (partial save-handler root)]))
 
 (defn new-save-panel [root]
   (let [slider-label (sc/label :text (str default-save-width), :font text-font)
-        width-slider (sc/slider :min 500, :max 20000, :id :save-width-slider)
-        slider-panel (sc/horizontal-panel :items [width-slider slider-label])
+        time-label (sc/label :font text-font, :id :time-remaining)
+        width-slider (sc/slider :min 500, :max 30000, :id :save-width-slider)
+        slider-panel (sc/horizontal-panel :items [slider-label width-slider time-label])
         pb (sc/progress-bar :min 0, :max 100, :value 0
                             :id :save-progress)
 
@@ -163,6 +168,25 @@
        :change (fn [_] (sc/text! slider-label (str (sc/value width-slider)))))
 
     save-panel))
+
+(defn update-location-stat! [root]
+  (let [loc-stat (sc/select root [:#location-stat])
+        {:keys [start-r end-r, start-i end-i]} @global-limits!]
+    (sc/text! loc-stat
+              (str "<html>start-r: " start-r ", end-r: " end-r "<br>"
+                   "start-i: " start-i ", end-i: " end-i "</html>"))))
+
+(defn update-stat-bar! [root]
+  (doto root
+    (update-location-stat!)))
+
+(defn new-stat-bar []
+  (let [location-stat (sc/label :font stat-font, :id :location-stat)
+        panel (sc/flow-panel :items [location-stat])]
+
+    (update-stat-bar! panel)
+
+    panel))
 
 (defn new-movement-bar [cvs]
   (let [handler (fn [sym-code r-dir i-dir _]
@@ -183,7 +207,6 @@
                     (b 8594 1 0)])] ; Right
 
     p))
-
 
 (defn new-color-picker [cvs]
   (let [b #(sc/button :font text-font :text (str %)
@@ -215,24 +238,26 @@
 
 (defn panel []
   (let [cvs (canvas)
-
+        
         bp (sc/border-panel
              :center cvs
              :north (new-movement-bar cvs)
              :east (new-color-picker cvs)
              :west (new-location-picker cvs))
 
-        sp (new-save-panel bp)]
+        save-panel (new-save-panel bp)
+        stat-panel (new-stat-bar)
+        south-panel (sc/vertical-panel :items [save-panel stat-panel])]
 
     (println "Loading...")
     (reset-finder-process! cvs)
 
-    (sc/config! bp :south sp)
+    (sc/config! bp :south south-panel)
 
     bp))
 
-(defn resize-checking-timer [root-frame check-delay]
-  (let [cvs [(sc/select root-frame [:#canvas])]]
+(defn updating-timer [root-frame check-delay]
+  (let [cvs (sc/select root-frame [:#canvas])]
     (sc/timer
       (fn [_]
         (let [updated? (atom false)] ; Eww!
@@ -243,7 +268,9 @@
                     (assoc % :rep-width w, :rep-height h)))
 
           (when @updated?
-            (reset-finder-process! cvs))))
+            (reset-finder-process! cvs))
+
+          (update-stat-bar! root-frame)))
 
       :delay check-delay)))
 
@@ -264,7 +291,7 @@
 
         cvs (sc/select f [:#canvas])
 
-        resize-timer (resize-checking-timer f 2500)
+        update-timer (updating-timer f 2500)
 
         repaint-timer (sc/timer (fn [_] (sc/repaint! cvs))
                                 :delay 1000)]
@@ -272,7 +299,7 @@
     (sc/listen f
        :window-closing
        (fn [_] (stop-current-process!)
-               (stop-timers resize-timer repaint-timer)
+               (stop-timers update-timer repaint-timer)
                (println "Final Cleanup Performed.")))
 
     (sc/request-focus! f)
