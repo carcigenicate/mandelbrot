@@ -95,7 +95,7 @@
         {:keys [rep-width rep-height]} save-limits
 
         total (* rep-width rep-height)
-        update-perc 0.01
+        update-perc 0.00001
         update-every (int (* total update-perc))
 
         points (cf/lazy-par-calc-points save-limits)
@@ -105,11 +105,11 @@
 
         img (draw-image-in-limits2 save-limits points color-f
               (fn [n c]
-               (when (zero? (rem n update-every))
-                 (sc/invoke-later
-                   (sc/value! prog-bar (* 100 (perc n)))
-                   (sc/text! time-label
-                             (formatted-mins-left n total (- (t) start-ms)))))))]
+                (when (zero? (rem n update-every))
+                  (sc/invoke-later
+                    (sc/value! prog-bar (* 100 (perc n)))
+                    (sc/text! time-label
+                              (formatted-mins-left n total (- (t) start-ms)))))))]
 
     (save-image save-limits img)))
 
