@@ -89,9 +89,6 @@
   "Stops a running process (if ones already been started), and start a new one for the current limits."
   [cvs]
   (let [limits @global-limits!]
-    #_
-    (println "Starting finder for" limits)
-
     (stop-current-process!)
     (reset! global-results [])
 
@@ -121,7 +118,7 @@
     (reset-finder-process! canvas)))
 
 (defn save-handler [root _]
-  (println "Saving...")
+  (println (str "Saving... (" (Date.) ")"))
   (let [prog-bar (sc/select root [:#save-progress])
         time-label (sc/select root [:#time-remaining])
         slider (sc/select root [:#save-width-slider])
@@ -133,7 +130,7 @@
                        @global-color-f!
                        (assoc @global-limits! :rep-width width,
                                               :rep-height height))
-      (println "Saved.")
+      (println "Saved at" (str (Date.)))
       (sc/invoke-later
         (sc/value! prog-bar 0)
         (sc/text! time-label "")))))
