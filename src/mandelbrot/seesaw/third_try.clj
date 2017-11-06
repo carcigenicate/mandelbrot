@@ -18,7 +18,7 @@
   (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
            [java.util Date]
            [java.awt Canvas]
-           (javax.swing Timer)))
+           [javax.swing Timer]))
 
 ; TODO: Global frame!?
 

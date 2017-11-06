@@ -12,4 +12,6 @@
         good-args (if valid? parsed [])]
 
     (-> (apply ui/frame good-args)
-        (sc/show!))))
+        (sc/show!))
+
+    nil))

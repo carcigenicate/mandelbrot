@@ -33,27 +33,27 @@
         (chunk-f chunk-n chunk)
 
         (doseq [{:keys [rep-x rep-y iters]} chunk]
-          (let [^Color color (color-f rep-x rep-y iters)]
-            (.setRGB img rep-x rep-y
-                     (.getRGB color))))
+          (let [^Color color (color-f rep-x rep-y iters)
+                rgb (.getRGB color)]
+            (.setRGB img rep-x rep-y rgb)))
 
         (recur (inc chunk-n))))
 
     img))
 
 ; Accepts a (potentially lazy) list of points to process, instead of a channel.
-(defn draw-image-in-limits2 [limits points color-f chunk-f]
+(defn draw-image-in-limits2 [limits points color-f point-f]
   (let [{:keys [rep-width rep-height]} limits
         img (new-image-for-limits limits)]
 
     (loop [point-n 0
            [{:keys [r i rep-x rep-y iters] :as point} & rest-points] points]
-      (chunk-f point-n point)
+      (point-f point-n point)
 
       (if point
-        (let [^Color color (color-f r i iters)]
-          (.setRGB img rep-x rep-y
-                   (.getRGB color))
+        (let [^Color color (color-f r i iters)
+              rgb (.getRGB color)]
+          (.setRGB img rep-x rep-y rgb)
 
           (recur (inc point-n) rest-points))
 
@@ -61,11 +61,12 @@
 
 (defn limits->std-name [limits]
   (let [{:keys [start-r end-r, start-i end-i]} limits
-        f #(format "%0.16f" %)]
-    (str (f start-r) " " (f end-r) " " (f start-i) " " (f end-i))))
+        f #(format "%.16f" (double %))]
+
+    (str "["(f start-r) " " (f end-r) " " (f start-i) " " (f end-i) "]")))
 
 (defn save-image [limits, ^BufferedImage img]
-  (let [file-name (str (limits->std-name limits) " Date:" (g/current-ms-timestamp))
+  (let [file-name (str (limits->std-name limits) " Date " (g/current-ms-timestamp))
         path (str save-path file-name "." save-ext)]
     (clojure.java.io/make-parents path)
 

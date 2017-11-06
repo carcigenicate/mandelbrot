@@ -14,12 +14,16 @@
         field-width (- end-r start-r)
         field-height (- end-i start-i)
         x-step (double (/ field-width rep-width))
-        y-step (double (/ field-height rep-height))]
+        y-step (double (/ field-height rep-height))
+
+        ; Needed or else map-range returns values greater than rep-width if
+        ;  rep-width is a Ratio
+        [floored-width floored-height] [(int rep-width) (int rep-height)]]
 
     (for [i (range start-i end-i y-step)
           r (range start-r end-r x-step)
-          :let [rx (g/map-range r start-r end-r 0 rep-width)
-                ry (g/map-range i start-i end-i 0 rep-height)]]
+          :let [rx (g/map-range r start-r end-r 0 floored-width)
+                ry (g/map-range i start-i end-i 0 floored-height)]]
 
       [r i rx ry])))
 
