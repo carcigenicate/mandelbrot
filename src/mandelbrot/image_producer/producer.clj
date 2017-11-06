@@ -87,7 +87,7 @@
       (double (/ ms-remaining 1000 60)))))
 
 (defn formatted-mins-left [jobs-completed total-jobs ms-elapsed]
-  (str (format "%.2f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
+  (str (format "%.1f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
        " mins"))
 
 (defn canvas-saver [prog-bar time-label color-f save-limits]

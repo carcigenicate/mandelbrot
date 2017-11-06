@@ -22,13 +22,13 @@
 
 ; TODO: Global frame!?
 
-(def default-window-width 1000)
-(def default-window-ratio 1.5)
+(def default-window-width 700)
+(def default-window-ratio 1)
 (def default-window-height (/ default-window-width default-window-ratio))
 
 (def zoom-perc 0.90)
 
-(def text-font "Arial-15")
+(def text-font "Arial-16")
 (def stat-font "Arial-15")
 
 (def default-save-width 5472)
@@ -150,7 +150,7 @@
 (defn new-save-panel [root]
   (let [slider-label (sc/label :text (str default-save-width), :font text-font)
         time-label (sc/label :font text-font, :id :time-remaining)
-        width-slider (sc/slider :min 500, :max 25000, :id :save-width-slider)
+        width-slider (sc/slider :min 100, :max 50000, :id :save-width-slider)
         slider-panel (sc/horizontal-panel :items [slider-label width-slider time-label])
         pb (sc/progress-bar :min 0, :max 100, :value 0
                             :id :save-progress)
