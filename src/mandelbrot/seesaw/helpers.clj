@@ -10,14 +10,28 @@
   (let [^Dimension dims (sc/config component :size)]
     [(.width dims) (.height dims)]))
 
-(defn limit-dimensions [limits]
+(defn plane-dimensions [limits]
   (let [{:keys [start-r end-r, start-i end-i]} limits]
 
     [(- end-r start-r)
      (- end-i start-i)]))
 
+(defn rep-ratio [limits]
+  (let [{:keys [rep-width rep-height]} limits]
+    (/ rep-height rep-width)))
+
+(defn fix-plane-height
+  "Adjusts the limits of the complex plane to match the height/width ratio of the representation."
+  [limits]
+  (let [rat (rep-ratio limits)
+        {:keys [start-r, start-i]} limits
+        [w h] (plane-dimensions limits)]
+
+    (assoc limits
+      :end-i (double (+ start-i (* rat w))))))
+
 (defn move-limits-to [limits center-r center-i]
-  (let [plane-dims (limit-dimensions limits)
+  (let [plane-dims (plane-dimensions limits)
         [h-width h-height] (mapv #(/ % 2) plane-dims)]
 
     (assoc limits
@@ -28,7 +42,7 @@
 
 (defn move-limits-by [limits r-offset i-offset]
   (let [{:keys [start-r start-i]} limits
-        [width height] (limit-dimensions limits)
+        [width height] (plane-dimensions limits)
         center-r (double (+ start-r (/ width 2) r-offset))
         center-i (double (+ start-i (/ height 2) i-offset))]
 
@@ -39,8 +53,7 @@
   [limits in? zoom-by]
   (let [{:keys [start-r end-r, start-i end-i]} limits
         zoom-dir (if in? 1 -1)
-        half-z (/ zoom-by 2)
-        diff (* zoom-by zoom-dir) #_(* half-z zoom-dir)]
+        diff (* zoom-by zoom-dir)]
 
     (assoc limits
       :start-r (+ start-r diff)
@@ -51,9 +64,7 @@
 (defn zoom-limits-by-perc
   "Zooms a limit view in or out, depending on the in? parameter."
   [limits in? zoom-perc]
-  (let [{:keys [start-r end-r, start-i end-i]} limits
-
-        view-dims [(- end-r start-r) (- end-i start-i)]
+  (let [view-dims (plane-dimensions limits)
         half-dims (mapv #(/ % 2) view-dims)
 
         zoom-by (* zoom-perc (apply min half-dims))]

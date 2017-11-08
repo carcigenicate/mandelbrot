@@ -27,6 +27,7 @@
 (def default-window-height (/ default-window-width default-window-ratio))
 
 (def zoom-perc 0.90)
+(def move-perc 0.4)
 
 (def text-font "Arial-16")
 (def stat-font "Arial-15")
@@ -102,8 +103,7 @@
                 rep-width rep-height]} @global-limits!
         left-click? (= MouseEvent/BUTTON1 (.getButton e))
 
-        [x y]
-        [(.getX e) (.getY e)]
+        [x y] [(.getX e) (.getY e)]
 
         [r i]
         (mapv double
@@ -111,8 +111,9 @@
                (g/map-range y 0 rep-height start-i end-i)])]
 
     (swap! global-limits! #(-> %
-                               (sh/zoom-limits-by-perc left-click? zoom-perc)
-                               (sh/move-limits-to r i)))
+                               (sh/move-limits-to r i)
+                               (sh/zoom-limits-by-perc left-click? zoom-perc)))
+
 
 
     (reset-finder-process! canvas)))
@@ -197,8 +198,10 @@
   (let [handler (fn [sym-code r-dir i-dir _]
                   (swap! global-limits!
                          (fn [l]
-                           (let [[r-off i-off] (map #(/ % 2) (sh/limit-dimensions l))]
-                             (sh/move-limits-by l (* r-dir r-off) (* i-dir i-off)))))
+                           (let [[r-off i-off] (map #(* % move-perc)
+                                                    (sh/plane-dimensions l))]
+                             (sh/move-limits-by l (* r-dir r-off)
+                                                  (* i-dir i-off)))))
 
                   (reset-finder-process! cvs))
 
@@ -270,6 +273,7 @@
                         [w h] (sh/get-dimensions root-frame)]
                     (reset! updated? (or (not= w rep-width) (not= h rep-height)))
                     (assoc % :rep-width w, :rep-height h)))
+
 
           (when @updated?
             (reset-finder-process! cvs))
