@@ -18,6 +18,8 @@
 (def color-mode BufferedImage/TYPE_INT_RGB)
 (def save-ext "png")
 
+(def update-perc 0.001)
+
 (defn new-image-for-limits ^BufferedImage [limits]
   (let [{:keys [rep-width rep-height]} limits
         ^BufferedImage img (BufferedImage. rep-width rep-height color-mode)]
@@ -95,8 +97,7 @@
         {:keys [rep-width rep-height]} save-limits
 
         total (* rep-width rep-height)
-        update-perc 0.00001
-        update-every (int (* total update-perc))
+        update-every (inc (int (* total update-perc)))
 
         points (cf/lazy-par-calc-points save-limits)
 

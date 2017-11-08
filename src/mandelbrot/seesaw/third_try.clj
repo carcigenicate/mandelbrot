@@ -6,7 +6,7 @@
 
             [helpers.general-helpers :as g]
 
-            [clojure.core.async :refer [go go-loop <! >! chan]]
+            [clojure.core.async :refer [go go-loop <! >! chan thread]]
 
             [mandelbrot.mandelbrot-iteration :as mi]
             [mandelbrot.locations :as l]
@@ -111,8 +111,9 @@
                (g/map-range y 0 rep-height start-i end-i)])]
 
     (swap! global-limits! #(-> %
-                               (sh/move-limits-to r i)
-                               (sh/zoom-limits-by-perc left-click? zoom-perc)))
+                               (sh/zoom-limits-by-perc left-click? zoom-perc)
+                               (sh/move-limits-to r i)))
+
 
     (reset-finder-process! canvas)))
 
@@ -122,27 +123,24 @@
         time-label (sc/select root [:#time-remaining])
         slider (sc/select root [:#save-width-slider])
         width (sc/value slider)
-        height (* width save-width-ratio)
+        height (* width save-width-ratio)]
 
-        fut
-        (future
-          (try
-            (mp/canvas-saver prog-bar time-label
-                             @global-color-f!
-                             (assoc @global-limits! :rep-width width,
-                                                    :rep-height height))
-            (println "Saved at" (str (Date.)))
+    (thread
+      (try
+        (mp/canvas-saver prog-bar time-label
+                         @global-color-f!
+                         (assoc @global-limits! :rep-width width,
+                                                :rep-height height))
+        (println "Saved at" (str (Date.)))
 
-            (catch OutOfMemoryError e
-              (println (str "Sorry! That image is too big to be created on this computer!")))
+        (catch OutOfMemoryError e
+          (println (str "Sorry! That image is too big to be created on this computer!")))
 
-            (finally
-              (sc/invoke-later
-                (sc/value! prog-bar 0)
-                (sc/text! time-label "")))))]
+        (finally
+          (sc/invoke-later
+            (sc/value! prog-bar 0)
+            (sc/text! time-label "")))))))
 
-    ; Necessary so the future doesn't simply swallow any exceptions
-    @fut))
 
 (defn canvas []
   (let [cvs (sc/canvas :id :canvas
