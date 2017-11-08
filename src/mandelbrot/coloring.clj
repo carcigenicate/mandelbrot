@@ -47,7 +47,7 @@
          (* y 2)
          (* n 2)))
 
-(defn testing [x y n]
+(defn quad [x y n]
   (co (wr (* x y))
       (wr (* x n))
       (wr (* y n))))

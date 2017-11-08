@@ -51,7 +51,7 @@
   (atom []))
 
 (def color-options [co/lava, co/tentacles, co/exp, co/exp2,
-                    co/dull, co/crazy, co/super-crazy, co/testing])
+                    co/dull, co/crazy, co/super-crazy, co/quad])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
                        l/tentacle-example, l/evolving-swirls])
@@ -102,15 +102,14 @@
                 rep-width rep-height]} @global-limits!
         left-click? (= MouseEvent/BUTTON1 (.getButton e))
 
-        [x y :as s-coord]
+        [x y]
         [(.getX e) (.getY e)]
 
-        [r i :as comp-coord]
+        [r i]
         (mapv double
               [(g/map-range x 0 rep-width start-r end-r)
                (g/map-range y 0 rep-height start-i end-i)])]
 
-    (println "Complex:" comp-coord ", Screen:" s-coord)
     (swap! global-limits! #(-> %
                                (sh/move-limits-to r i)
                                (sh/zoom-limits-by-perc left-click? zoom-perc)))
@@ -123,17 +122,27 @@
         time-label (sc/select root [:#time-remaining])
         slider (sc/select root [:#save-width-slider])
         width (sc/value slider)
-        height (* width save-width-ratio)]
+        height (* width save-width-ratio)
 
-    (future
-      (mp/canvas-saver prog-bar time-label
-                       @global-color-f!
-                       (assoc @global-limits! :rep-width width,
-                                              :rep-height height))
-      (println "Saved at" (str (Date.)))
-      (sc/invoke-later
-        (sc/value! prog-bar 0)
-        (sc/text! time-label "")))))
+        fut
+        (future
+          (try
+            (mp/canvas-saver prog-bar time-label
+                             @global-color-f!
+                             (assoc @global-limits! :rep-width width,
+                                                    :rep-height height))
+            (println "Saved at" (str (Date.)))
+
+            (catch OutOfMemoryError e
+              (println (str "Sorry! That image is too big to be created on this computer!")))
+
+            (finally
+              (sc/invoke-later
+                (sc/value! prog-bar 0)
+                (sc/text! time-label "")))))]
+
+    ; Necessary so the future doesn't simply swallow any exceptions
+    @fut))
 
 (defn canvas []
   (let [cvs (sc/canvas :id :canvas
@@ -247,7 +256,6 @@
         stat-panel (new-stat-bar)
         south-panel (sc/vertical-panel :items [save-panel stat-panel])]
 
-    (println "Loading...")
     (reset-finder-process! cvs)
 
     (sc/config! bp :south south-panel)

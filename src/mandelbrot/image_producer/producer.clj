@@ -136,3 +136,9 @@
 
     (save-image l img)
     (println "Saved!")))
+
+(defn test-create []
+  (let [w 20000
+        h (int (* w 2/3))
+        b (BufferedImage. w h BufferedImage/TYPE_INT_RGB)]
+    (print w h b)))
