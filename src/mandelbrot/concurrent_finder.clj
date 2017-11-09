@@ -36,6 +36,15 @@
 (defn lazy-par-calc-points [limits]
   (pmap (partial apply calc-iter-point) (generate-check-points limits)))
 
+(defn lazy-par-chunks [perc-divisions limits]
+  (let [{:keys [rep-width rep-height]} limits
+        chunk-size (int (* rep-width rep-height perc-divisions))
+        points (generate-check-points limits)]
+
+    (pmap (fn [chunk]
+            (mapv (partial apply calc-iter-point) chunk))
+          (partition chunk-size points))))
+
 (defn future-rows [limits]
   (let [{:keys [start-r end-r start-i end-i rep-width rep-height]} limits
         field-width (- end-r start-r)

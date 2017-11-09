@@ -24,7 +24,7 @@
 
 (def default-window-width 700)
 (def default-window-ratio 1)
-(def default-window-height (/ default-window-width default-window-ratio))
+(def default-window-height (* default-window-width default-window-ratio))
 
 (def zoom-perc 0.90)
 (def move-perc 0.4)
