@@ -9,9 +9,11 @@
         parsed (map g/parse-double std-args)
         valid? (every? identity parsed)
 
-        good-args (if valid? parsed [])]
+        good-args (if valid? parsed [])
 
-    (-> (apply ui/frame good-args)
-        (sc/show!))
+        [mf cf] (apply ui/frames good-args)]
+
+    (sc/show! mf)
+    (sc/show! cf)
 
     nil))

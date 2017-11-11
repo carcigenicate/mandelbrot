@@ -8,6 +8,7 @@
 
             [clojure.core.async :refer [go go-loop <! >! chan thread]]
 
+            [mandelbrot.seesaw.color-picker :as cp]
             [mandelbrot.mandelbrot-iteration :as mi]
             [mandelbrot.locations :as l]
             [mandelbrot.concurrent-finder :as cf]
@@ -244,7 +245,7 @@
 
     panel))
 
-(defn panel []
+(defn main-panel []
   (let [cvs (canvas)
         
         bp (sc/border-panel
@@ -286,7 +287,7 @@
   (doseq [t timers]
     (.stop ^Timer t)))
 
-(defn frame [& [start-r end-r, start-i end-i]]
+(defn frames [& [start-r end-r, start-i end-i]]
   (reset! global-limits! (if start-r
                            (cf/->Mandelbrot-Limits start-r end-r,
                                                    start-i end-i
@@ -295,9 +296,11 @@
                            default-starting-limits))
 
   (let [f (sc/frame :size [default-window-width :by default-window-height]
-                    :content (panel))
+                    :content (main-panel))
 
         cvs (sc/select f [:#canvas])
+
+        color-frame (cp/test-frame default-window-width default-window-height cvs global-color-f!)
 
         update-timer (updating-timer f 2500)
 
@@ -312,4 +315,4 @@
 
     (sc/request-focus! f)
 
-    f))
+    [f color-frame]))
