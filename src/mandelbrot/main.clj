@@ -1,6 +1,7 @@
 (ns mandelbrot.main
   (:require [mandelbrot.seesaw.third-try :as ui]
             [seesaw.core :as sc]
+            [seesaw.dev :as sd]
             [helpers.general-helpers :as g])
   (:gen-class))
 

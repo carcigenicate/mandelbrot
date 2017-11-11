@@ -18,8 +18,8 @@
 
   (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
            [java.util Date]
-           [java.awt Canvas]
-           [javax.swing Timer]))
+           [java.awt Canvas Color]
+           [javax.swing Timer JPanel JComponent]))
 
 ; TODO: Global frame!?
 
@@ -27,7 +27,7 @@
 (def default-window-ratio 0.7)
 (def default-window-height (* default-window-width default-window-ratio))
 
-(def zoom-perc 0.90)
+(def zoom-perc 0.9)
 (def move-perc 0.4)
 
 (def text-font "Arial-16")
@@ -116,9 +116,10 @@
                (start-receiving! cvs point-chan)
                pair)))))
 
-(defn mouse-handler [canvas, ^MouseEvent e]
+(defn mouse-handler [^JComponent canvas, ^MouseEvent e]
   (let [{:keys [start-r end-r, start-i end-i,
                 rep-width rep-height]} @global-limits!
+        g (.getGraphics canvas)
         left-click? (= MouseEvent/BUTTON1 (.getButton e))
 
         [x y] [(.getX e) (.getY e)]
@@ -126,7 +127,14 @@
         [r i]
         (mapv double
               [(g/map-range x 0 rep-width start-r end-r)
-               (g/map-range y 0 rep-height start-i end-i)])]
+               (g/map-range y 0 rep-height start-i end-i)])
+
+        min-dim (min rep-width rep-height)
+        dot-radius (/ (* (- 1 zoom-perc) min-dim) 2)]
+
+    (sg/draw g
+             (sg/circle x y dot-radius)
+             (sg/style :background (Color. 255 255 255 150)))
 
     (swap! global-limits! #(-> %
                                (sh/move-limits-to r i)
@@ -163,7 +171,7 @@
   (let [cvs (sc/canvas :id :canvas
                        :paint (paint-map))]
     (sc/listen cvs
-      :mouse-clicked (partial mouse-handler cvs))
+      :mouse-released (partial mouse-handler cvs))
 
     cvs))
 
@@ -177,7 +185,7 @@
         width-slider (sc/slider :min 100, :max 50000, :id :save-width-slider)
         slider-panel (sc/horizontal-panel :items [slider-label width-slider time-label])
         pb (sc/progress-bar :min 0, :max 100, :value 0
-                            :id :save-progress)
+                            :paint-string? true, :id :save-progress)
 
         save-panel (sc/border-panel :north slider-panel
                                     :south pb)
