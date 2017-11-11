@@ -23,8 +23,8 @@
 
 ; TODO: Global frame!?
 
-(def default-window-width 700)
-(def default-window-ratio 1)
+(def default-window-width 900)
+(def default-window-ratio 0.7)
 (def default-window-height (* default-window-width default-window-ratio))
 
 (def zoom-perc 0.90)
@@ -156,7 +156,7 @@
   (sc/button :text "Save", :font text-font
              :listen [:action (partial save-handler root)]))
 
-(defn new-save-panel [root]
+(defn new-save-panel []
   (let [slider-label (sc/label :text (str default-save-width), :font text-font)
         time-label (sc/label :font text-font, :id :time-remaining)
         width-slider (sc/slider :min 100, :max 50000, :id :save-width-slider)
@@ -165,8 +165,11 @@
                             :id :save-progress)
 
         save-panel (sc/border-panel :north slider-panel
-                                    :center (save-button root)
-                                    :south pb)]
+                                    :south pb)
+
+        save-button (save-button save-panel)]
+
+    (sc/config! save-panel :center save-button)
 
     ; For some reason specifying this in the slider constructor doesn't have any effect
     (sc/value! width-slider default-save-width)
@@ -217,7 +220,7 @@
 
     p))
 
-(defn new-color-picker [cvs]
+(defn new-color-preset-panel [cvs]
   (let [b #(sc/button :font text-font :text (str %)
                       :listen [:action
                                (fn [_] (reset! global-color-f! %2)
@@ -227,6 +230,14 @@
         panel (sc/vertical-panel :items (conj buttons label))]
 
     panel))
+
+(defn new-color-panel [cvs]
+  (let [presets (new-color-preset-panel cvs)
+        picker (cp/new-multiplier-panel cvs global-color-f!)
+
+        bp (sc/border-panel :west presets,
+                            :center picker)]
+    bp))
 
 (defn new-location-picker [root-frame]
   (let [cvs (sc/select root-frame [:#canvas])
@@ -245,22 +256,32 @@
 
     panel))
 
-(defn main-panel []
+(defn new-view-panel []
   (let [cvs (canvas)
-        
+
         bp (sc/border-panel
              :center cvs
              :north (new-movement-bar cvs)
-             :east (new-color-picker cvs)
              :west (new-location-picker cvs))
 
-        save-panel (new-save-panel bp)
+        save-panel (new-save-panel)
         stat-panel (new-stat-bar)
         south-panel (sc/vertical-panel :items [save-panel stat-panel])]
 
+    (sc/config! bp :south south-panel)
+
     (reset-finder-process! cvs)
 
-    (sc/config! bp :south south-panel)
+    bp))
+
+(defn main-panel []
+  (let [view-panel (new-view-panel)
+        cvs (sc/select view-panel [:#canvas])
+
+        color-panel (new-color-panel cvs)
+
+        bp (sc/border-panel :center view-panel
+                            :east color-panel)]
 
     bp))
 
@@ -287,7 +308,7 @@
   (doseq [t timers]
     (.stop ^Timer t)))
 
-(defn frames [& [start-r end-r, start-i end-i]]
+(defn frame [& [start-r end-r, start-i end-i]]
   (reset! global-limits! (if start-r
                            (cf/->Mandelbrot-Limits start-r end-r,
                                                    start-i end-i
@@ -299,8 +320,6 @@
                     :content (main-panel))
 
         cvs (sc/select f [:#canvas])
-
-        color-frame (cp/test-frame default-window-width default-window-height cvs global-color-f!)
 
         update-timer (updating-timer f 2500)
 
@@ -315,4 +334,4 @@
 
     (sc/request-focus! f)
 
-    [f color-frame]))
+    f))

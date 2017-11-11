@@ -11,9 +11,8 @@
 
         good-args (if valid? parsed [])
 
-        [mf cf] (apply ui/frames good-args)]
+        f (apply ui/frame good-args)]
 
-    (sc/show! mf)
-    (sc/show! cf)
+    (sc/show! f)
 
     nil))
