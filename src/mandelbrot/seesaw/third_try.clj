@@ -72,32 +72,49 @@
 (defn paint-map []
   {:after paint, :super? true})
 
-(defn start-point-supplier [limits]
+(defn start-point-supplier
+  "Starts the finder for the given limits, and returns the [result-chan stop-f] pair."
+  [limits]
   (cf/point-calculator-component @chunk-perc limits))
 
-(defn start-receiving! [canvas chunk-chan]
-  (go-loop []
-    (when-let [chunk (<! chunk-chan)]
-      (swap! global-results #(conj % chunk))
-      (recur))))
+(defn start-receiving!
+  "Loops while the given chunk channel is open and supplying chunks.
+  Repaints every few seconds, and when the process is completed."
+  [canvas chunk-chan]
+  (let [repaint-delay 2500
+        t (sc/timer (fn [_] (sc/repaint! canvas))
+                    :initial-delay repaint-delay
+                    :delay repaint-delay)]
+    (go-loop []
+      (if-let [chunk (<! chunk-chan)]
+        (do
+          (swap! global-results #(conj % chunk))
+          (recur))
 
-(defn stop-current-process! []
+        (do
+          (.stop t)
+          (sc/repaint! canvas))))))
+
+(defn stop-current-process!
+  "Cancels the global finder."
+  []
   (swap! global-finder-pair!
          #(when-let [[_ stop-f] %]
            (stop-f)
            nil)))
 
 (defn reset-finder-process!
-  "Stops a running process (if ones already been started), and start a new one for the current limits."
+  "Stops a running process (if ones already been started), and starts a new one for the current limits."
   [cvs]
-  (let [limits @global-limits!]
-    (stop-current-process!)
-    (reset! global-results [])
+  (let [{:keys [rep-width rep-height] :as limits} @global-limits!]
+    (when (pos? (* rep-width rep-height))
+      (stop-current-process!)
+      (reset! global-results [])
 
-    (reset! global-finder-pair!
-            (let [[point-chan :as pair] (start-point-supplier limits)]
-             (start-receiving! cvs point-chan)
-             pair))))
+      (reset! global-finder-pair!
+              (let [[point-chan :as pair] (start-point-supplier limits)]
+               (start-receiving! cvs point-chan)
+               pair)))))
 
 (defn mouse-handler [canvas, ^MouseEvent e]
   (let [{:keys [start-r end-r, start-i end-i,
@@ -114,8 +131,6 @@
     (swap! global-limits! #(-> %
                                (sh/move-limits-to r i)
                                (sh/zoom-limits-by-perc left-click? zoom-perc)))
-
-
 
     (reset-finder-process! canvas)))
 
@@ -233,7 +248,7 @@
 
 (defn new-color-panel [cvs]
   (let [presets (new-color-preset-panel cvs)
-        picker (cp/new-multiplier-panel cvs global-color-f!)
+        picker (cp/new-option-panel cvs global-color-f!)
 
         bp (sc/border-panel :west presets,
                             :center picker)]
@@ -245,12 +260,13 @@
         b #(sc/button :font text-font, :text (str %)
                       :halign :center
                       :listen [:action
-                               (fn [_]
-                                 (let [[w h] (sh/get-dimensions root-frame)]
+                               (fn [_] ; FIXME: HERE!
+                                 (let [[w h] (sh/get-dimensions cvs)]
                                    (reset! global-limits!
                                            (assoc %2 :rep-width w
                                                      :rep-height h))
                                    (reset-finder-process! cvs)))])
+
         buttons (map b (range) location-options)
         panel (sc/vertical-panel :items (conj buttons label))]
 
@@ -285,24 +301,26 @@
 
     bp))
 
-(defn updating-timer [root-frame check-delay]
-  (let [cvs (sc/select root-frame [:#canvas])]
-    (sc/timer
-      (fn [_]
-        (let [updated? (atom false)] ; Eww!
-          (swap! global-limits!
-                 #(let [{:keys [rep-width rep-height]} %
-                        [w h] (sh/get-dimensions root-frame)]
-                    (reset! updated? (or (not= w rep-width) (not= h rep-height)))
-                    (assoc % :rep-width w, :rep-height h)))
+(defn updating-timer
+  "Checks for resizes. If the window has been resized since the last check, the finder is reset for the new canvas size."
+  [root-frame check-delay]
+  (let [cvs (sc/select root-frame [:#canvas])
+        timer-f
+            (fn [_]
+              (let [updated? (atom false)] ; Eww!
+                (swap! global-limits!
+                       #(let [{:keys [rep-width rep-height]} %
+                              [w h] (sh/get-dimensions cvs)]
+                          (reset! updated? (or (not= w rep-width)
+                                               (not= h rep-height)))
+                          (assoc % :rep-width w, :rep-height h)))
 
+                (when @updated?
+                  (reset-finder-process! cvs))
 
-          (when @updated?
-            (reset-finder-process! cvs))
+                (update-stat-bar! root-frame)))]
 
-          (update-stat-bar! root-frame)))
-
-      :delay check-delay)))
+    (sc/timer timer-f :initial-delay check-delay, :delay check-delay)))
 
 (defn stop-timers [& timers]
   (doseq [t timers]
@@ -321,15 +339,12 @@
 
         cvs (sc/select f [:#canvas])
 
-        update-timer (updating-timer f 2500)
-
-        repaint-timer (sc/timer (fn [_] (sc/repaint! cvs))
-                                :delay 1000)]
+        update-timer (updating-timer f 2500)]
 
     (sc/listen f
        :window-closing
        (fn [_] (stop-current-process!)
-               (stop-timers update-timer repaint-timer)
+               (stop-timers update-timer)
                (println "Final Cleanup Performed.")))
 
     (sc/request-focus! f)

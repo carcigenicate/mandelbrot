@@ -128,7 +128,7 @@
               (>!! out-chan processed-chunk)
               (swap! pending-jobs! #(disj % i))
 
-              (when (= (count @pending-jobs!) 0)
+              (when (empty? @pending-jobs!)
                 (stop-f)
                 #_(println "Done. Stopped.")))))))
 
