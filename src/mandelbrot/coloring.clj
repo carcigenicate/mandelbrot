@@ -1,5 +1,7 @@
 (ns mandelbrot.coloring
-  (:require [helpers.general-helpers :as g])
+  (:require [helpers.general-helpers :as g]
+            [mandelbrot.seesaw.color-picker :as cp])
+
   (:import [java.awt Color]))
 
 (defn- cl [n]
@@ -51,3 +53,10 @@
   (co (wr (* x y))
       (wr (* x n))
       (wr (* y n))))
+
+(def range-coloring
+  (cp/new-basic-color-f
+    (cp/->Color-Options
+      (cp/->Color-Mults 1 2 3)
+      (cp/->Color-Mults 4 5 6)
+      (cp/->Color-Mults 7 8 9))))

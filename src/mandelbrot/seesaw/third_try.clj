@@ -21,8 +21,6 @@
            [java.awt Canvas Color]
            [javax.swing Timer JPanel JComponent]))
 
-; TODO: Global frame!?
-
 (def default-window-width 900)
 (def default-window-ratio 0.7)
 (def default-window-height (* default-window-width default-window-ratio))
@@ -52,11 +50,11 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2,
-                    co/dull, co/crazy, co/super-crazy, co/quad])
+(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull,
+                    co/crazy, co/super-crazy, co/quad, co/range-coloring])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
-                       l/tentacle-example, l/evolving-swirls])
+                       l/tentacle-example, l/evolving-swirls l/tool-swirls])
 
 (def global-color-f! (atom co/exp))
 
