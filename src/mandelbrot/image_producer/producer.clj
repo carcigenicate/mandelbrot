@@ -25,7 +25,7 @@
         ^BufferedImage img (BufferedImage. rep-width rep-height color-mode)]
 
     img))
-
+#_
 (defn draw-image-in-limits [limits in-chan color-f chunk-f]
   (let [img (new-image-for-limits limits)
         {:keys [rep-width rep-height]} limits]
@@ -67,8 +67,10 @@
 
     (str "["(f start-r) " " (f end-r) " " (f start-i) " " (f end-i) "]")))
 
-(defn save-image [limits, ^BufferedImage img]
-  (let [file-name (str (limits->std-name limits) " Date " (g/current-ms-timestamp))
+(defn save-image [limits, color-opt-str, ^BufferedImage img]
+  (let [file-name (str (limits->std-name limits)
+                       "Date"  (g/current-ms-timestamp)
+                       color-opt-str)
         path (str save-path file-name "." save-ext)]
     (clojure.java.io/make-parents path)
 
@@ -95,6 +97,7 @@
 (defn canvas-saver [prog-bar time-label color-f save-limits]
   (let [perc #(perc-done % save-limits)
         {:keys [rep-width rep-height]} save-limits
+        color-opt-str (:color-opts (meta color-f))
 
         total (* rep-width rep-height)
         update-every (inc (int (* total update-perc)))
@@ -112,7 +115,7 @@
                     (sc/text! time-label
                               (formatted-mins-left n total (- (t) start-ms)))))))]
 
-    (save-image save-limits img)))
+    (save-image save-limits color-opt-str img)))
 
 (defn test-routine []
   (let [r-width 5472

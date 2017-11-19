@@ -6,6 +6,10 @@
            (java.util Date)
            (java.io File)))
 
+(defn update-config! [^Component c, accessor-key, f]
+  (sc/config! c accessor-key
+    (f (sc/config c accessor-key))))
+
 (defn get-dimensions [component]
   (let [^Dimension dims (sc/config component :size)]
     [(.width dims) (.height dims)]))

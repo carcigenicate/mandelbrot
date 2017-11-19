@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module cursive.leiningen.project.LeiningenProjectsManager.displayName="mandelbrot:1" cursive.leiningen.project.LeiningenProjectsManager.isLeinModule="true" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager">
-    <output url="file://$MODULE_DIR$/target/base+system+user+dev/classes" />
-    <output-test url="file://$MODULE_DIR$/target/base+system+user+dev/classes" />
+    <output url="file://$MODULE_DIR$/target/default/classes" />
+    <output-test url="file://$MODULE_DIR$/target/default/classes" />
     <exclude-output />
     <option name="createStubs" value="true" />
     <content url="file://$MODULE_DIR$">
@@ -12,6 +12,7 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/target/base+system+user+dev" />
+      <excludeFolder url="file://$MODULE_DIR$/target/default" />
       <excludeFolder url="file://$MODULE_DIR$/target2" />
     </content>
     <orderEntry type="inheritedJdk" />

@@ -28,7 +28,7 @@
 (def default-window-height (* default-window-width default-window-ratio))
 
 (def zoom-perc 0.9)
-(def move-perc 0.4)
+(def move-perc 0.35)
 
 (def text-font "Arial-16")
 (def stat-font "Arial-15")
@@ -92,7 +92,7 @@
           (recur))
 
         (do
-          (.stop t)
+          (.stop ^Timer t)
           (sc/repaint! canvas))))))
 
 (defn stop-current-process!
@@ -142,11 +142,20 @@
 
     (reset-finder-process! canvas)))
 
-(defn save-handler [root _]
+(defn hibernate []
+  (.exec (Runtime/getRuntime)
+         (str "shutdown -h")))
+
+(defn save-handler [save-root _]
   (println (str "Saving... (" (Date.) ")"))
-  (let [prog-bar (sc/select root [:#save-progress])
-        time-label (sc/select root [:#time-remaining])
-        slider (sc/select root [:#save-width-slider])
+  (let [prog-bar (sc/select save-root [:#save-progress])
+        time-label (sc/select save-root [:#time-remaining])
+        slider (sc/select save-root [:#save-width-slider])
+
+        hiber-on-save? #(sc/config (sc/select save-root
+                                              [:#hibernate-on-save?-checkbox])
+                                   :selected?)
+
         width (sc/value slider)
         height (* width save-width-ratio)]
 
@@ -159,13 +168,15 @@
         (println "Saved at" (str (Date.)))
 
         (catch OutOfMemoryError e
-          (println (str "Sorry! That image is too big to be created on this computer!")))
+          (println (str "Sorry! That image is too big to be created on this computer! Try increasing the allocated heap size.")))
 
         (finally
+          (when (hiber-on-save?)
+            (hibernate))
+
           (sc/invoke-later
             (sc/value! prog-bar 0)
             (sc/text! time-label "")))))))
-
 
 (defn canvas []
   (let [cvs (sc/canvas :id :canvas
@@ -175,9 +186,9 @@
 
     cvs))
 
-(defn save-button [root]
+(defn save-button [save-root]
   (sc/button :text "Save", :font text-font
-             :listen [:action (partial save-handler root)]))
+             :listen [:action (partial save-handler save-root)]))
 
 (defn new-save-panel []
   (let [slider-label (sc/label :text (str default-save-width), :font text-font)
@@ -187,12 +198,17 @@
         pb (sc/progress-bar :min 0, :max 100, :value 0
                             :paint-string? true, :id :save-progress)
 
-        save-panel (sc/border-panel :north slider-panel
-                                    :south pb)
+        save-opts (sc/flow-panel
+                    :items [(sc/label :text "Hibernate on save?"),
+                            (sc/checkbox :id :hibernate-on-save?-checkbox)])
+
+        save-panel (sc/vertical-panel :items [slider-panel
+                                              pb
+                                              save-opts])
 
         save-button (save-button save-panel)]
 
-    (sc/config! save-panel :center save-button)
+    (sc/add! save-panel save-button)
 
     ; For some reason specifying this in the slider constructor doesn't have any effect
     (sc/value! width-slider default-save-width)
@@ -268,7 +284,7 @@
         b #(sc/button :font text-font, :text (str %)
                       :halign :center
                       :listen [:action
-                               (fn [_] ; FIXME: HERE!
+                               (fn [_]
                                  (let [[w h] (sh/get-dimensions cvs)]
                                    (reset! global-limits!
                                            (assoc %2 :rep-width w
