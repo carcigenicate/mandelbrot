@@ -20,6 +20,11 @@
         ;  rep-width is a Ratio
         [floored-width floored-height] [(int rep-width) (int rep-height)]]
 
+    #_ ; With widths of 45, 90, or 180, distortions appear in the image
+    (println "Field w/h" [field-width field-height] "\n"
+             "Steps h/v" [x-step y-step] "\n"
+             "Floored w/h" [floored-width floored-height])
+
     (for [i (range start-i end-i y-step)
           r (range start-r end-r x-step)
           :let [rx (g/map-range r start-r end-r 0 floored-width)

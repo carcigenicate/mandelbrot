@@ -25,14 +25,19 @@
 (def default-window-ratio 0.7)
 (def default-window-height (* default-window-width default-window-ratio))
 
-(def zoom-perc 0.9)
 (def move-perc 0.35)
+
+(def min-zoom-perc -1.0)
+(def max-zoom-perc 2.0)
+(def default-zoom-perc 0.9)
 
 (def text-font "Arial-16")
 (def stat-font "Arial-15")
 
 (def default-save-width 5472)
 (def save-width-ratio 2/3)
+
+(def shutdown-delay 30)
 
 (def chunk-perc (delay (double (/ 1 (* (sh/available-processors) 2)))))
 
@@ -50,8 +55,8 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull,
-                    co/crazy, co/super-crazy, co/quad, co/range-coloring])
+(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy,
+                    co/super-crazy, co/quad, co/range-coloring, co/cross])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
                        l/tentacle-example, l/evolving-swirls l/tool-swirls])
@@ -114,10 +119,13 @@
                (start-receiving! cvs point-chan)
                pair)))))
 
-(defn mouse-handler [^JComponent canvas, ^MouseEvent e]
-  (let [{:keys [start-r end-r, start-i end-i,
+(defn mouse-handler [root, ^MouseEvent e]
+  (let [cvs (sc/select root [:#canvas])
+        zoom-perc (sc/selection (sc/select root [:#zoom-perc-input]))
+
+        {:keys [start-r end-r, start-i end-i,
                 rep-width rep-height]} @global-limits!
-        g (.getGraphics canvas)
+        g (.getGraphics ^JComponent cvs)
         left-click? (= MouseEvent/BUTTON1 (.getButton e))
 
         [x y] [(.getX e) (.getY e)]
@@ -127,34 +135,38 @@
               [(g/map-range x 0 rep-width start-r end-r)
                (g/map-range y 0 rep-height start-i end-i)])
 
-        min-dim (min rep-width rep-height)
-        dot-radius (/ (* (- 1 zoom-perc) min-dim) 2)]
+        avg-dim (/ (+ rep-width rep-height) 2)
+        dot-radius (/ (* (- 1 zoom-perc) avg-dim) 2)]
 
     (sg/draw g
              (sg/circle x y dot-radius)
-             (sg/style :background (Color. 255 255 255 150)))
+             (sg/style :background (Color. 255 255 255 175)))
 
     (swap! global-limits! #(-> %
                                (sh/move-limits-to r i)
                                (sh/zoom-limits-by-perc left-click? zoom-perc)))
 
-    (reset-finder-process! canvas)))
+    (reset-finder-process! cvs)))
 
 (defn hibernate []
-  (.exec (Runtime/getRuntime)
-         (str "shutdown -h")))
+  (.exec (Runtime/getRuntime) "shutdown -h"))
+
+(defn delayed-shutdown [& [s-delay?]]
+  (let [t-str (if s-delay? (str " -t " s-delay?) "")]
+    (.exec (Runtime/getRuntime)
+           (str "shutdown -s" t-str))))
 
 (defn save-handler [save-root _]
   (println (str "Saving... (" (Date.) ")"))
   (let [prog-bar (sc/select save-root [:#save-progress])
         time-label (sc/select save-root [:#time-remaining])
-        slider (sc/select save-root [:#save-width-slider])
+        width-input (sc/select save-root [:#save-width-input])
 
-        hiber-on-save? #(sc/config (sc/select save-root
-                                              [:#hibernate-on-save?-checkbox])
+        close-on-save? #(sc/config (sc/select save-root
+                                              [:#close-on-save?-checkbox])
                                    :selected?)
 
-        width (sc/value slider)
+        width (sc/value width-input)
         height (* width save-width-ratio)]
 
     (thread
@@ -163,14 +175,15 @@
                          @global-color-f!
                          (assoc @global-limits! :rep-width width,
                                                 :rep-height height))
-        (println "Saved at" (str (Date.)))
+        (println "Saved at" (str (Date.) "\n"))
 
         (catch OutOfMemoryError e
           (println (str "Sorry! That image is too big to be created on this computer! Try increasing the allocated heap size.")))
 
         (finally
-          (when (hiber-on-save?)
-            (hibernate))
+          (when (close-on-save?)
+            (delayed-shutdown shutdown-delay)
+            (System/exit 0))
 
           (sc/invoke-later
             (sc/value! prog-bar 0)
@@ -179,8 +192,6 @@
 (defn canvas []
   (let [cvs (sc/canvas :id :canvas
                        :paint (paint-map))]
-    (sc/listen cvs
-      :mouse-released (partial mouse-handler cvs))
 
     cvs))
 
@@ -189,30 +200,28 @@
              :listen [:action (partial save-handler save-root)]))
 
 (defn new-save-panel []
-  (let [slider-label (sc/label :text (str default-save-width), :font text-font)
-        time-label (sc/label :font text-font, :id :time-remaining)
-        width-slider (sc/slider :min 100, :max 50000, :id :save-width-slider)
-        slider-panel (sc/horizontal-panel :items [slider-label width-slider time-label])
+  (let [time-label (sc/label :font text-font, :id :time-remaining)
+        width-label (sc/label :font text-font, :text "Saved Image Width: ")
+        width-input (sc/spinner :model default-save-width, :font text-font,
+                                :id :save-width-input,
+                                :tip "A number between 1000 and 40000")
+        width-panel (sc/horizontal-panel :items [width-label width-input time-label])
         pb (sc/progress-bar :min 0, :max 100, :value 0
                             :paint-string? true, :id :save-progress)
 
         save-opts (sc/flow-panel
-                    :items [(sc/label :text "Hibernate on save?"),
-                            (sc/checkbox :id :hibernate-on-save?-checkbox)])
+                    :items [(sc/label :text "Close and shutdown computer when done saving?"
+                                      :font text-font)
+                            (sc/checkbox :id :close-on-save?-checkbox)])
 
-        save-panel (sc/vertical-panel :items [slider-panel
+        save-panel (sc/vertical-panel :items [width-panel
                                               pb
-                                              save-opts])
+                                              save-opts]
+                                      :border 5)
 
         save-button (save-button save-panel)]
 
     (sc/add! save-panel save-button)
-
-    ; For some reason specifying this in the slider constructor doesn't have any effect
-    (sc/value! width-slider default-save-width)
-
-    (sc/listen width-slider
-       :change (fn [_] (sc/text! slider-label (str (sc/value width-slider)))))
 
     save-panel))
 
@@ -235,6 +244,17 @@
 
     panel))
 
+(defn new-zoom-panel []
+  (let [zoom-label (sc/label :text "Zoom Percentage: ", :font text-font)
+        zoom-input (sc/spinner
+                     :model
+                     (sc/spinner-model default-zoom-perc
+                        :from min-zoom-perc, :to max-zoom-perc, :by 0.01)
+                     :font text-font, :id :zoom-perc-input
+                     :tip "A decimal percentage of the screen to zoom by each click.")]
+
+    (sc/horizontal-panel :items [zoom-label zoom-input])))
+
 (defn new-movement-bar [cvs]
   (let [handler (fn [sym-code r-dir i-dir _]
                   (swap! global-limits!
@@ -249,13 +269,17 @@
         b #(sc/button :text (str (char %)), :font text-font
                       :listen [:action (partial handler % %2 %3)])
 
-        p (sc/flow-panel
-            :items [(b 8593 0 -1) ; Up
-                    (b 8595 0 1) ; Down
-                    (b 8592 -1 0) ; Left
-                    (b 8594 1 0)])] ; Right
+        pan-panel (sc/flow-panel
+                    :items [(b 8593 0 -1) ; Up
+                            (b 8595 0 1) ; Down
+                            (b 8592 -1 0) ; Left
+                            (b 8594 1 0)]) ; Right
 
-    p))
+        zoom-panel (new-zoom-panel)
+
+        movement-panel (sc/vertical-panel :items [pan-panel zoom-panel])]
+
+    movement-panel))
 
 (defn new-color-preset-panel [cvs]
   (let [b #(sc/button :font text-font :text (str %)
@@ -307,6 +331,8 @@
         south-panel (sc/vertical-panel :items [save-panel stat-panel])]
 
     (sc/config! bp :south south-panel)
+
+    (sc/listen cvs :mouse-released (partial mouse-handler bp))
 
     (reset-finder-process! cvs)
 

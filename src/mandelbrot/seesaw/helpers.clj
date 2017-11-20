@@ -71,7 +71,11 @@
   (let [view-dims (plane-dimensions limits)
         half-dims (mapv #(/ % 2) view-dims)
 
-        zoom-by (* zoom-perc (apply min half-dims))]
+        ; Hack to make it so zooming out is more productive.
+        base-dim (if in? (apply min half-dims)
+                         (apply max (map #(+ % (/ % zoom-perc)) half-dims)))
+
+        zoom-by (* zoom-perc base-dim)]
 
     (zoom-limits limits in? zoom-by)))
 

@@ -60,3 +60,10 @@
       (cp/->Color-Mults 1 2 3)
       (cp/->Color-Mults 4 5 6)
       (cp/->Color-Mults 7 8 9))))
+
+(def cross
+  (cp/new-basic-color-f
+    (cp/->Color-Options
+       (cp/->Color-Mults 100 100 -6)
+      (cp/->Color-Mults -100 100 5)
+      (cp/->Color-Mults -100 -100 -4))))
