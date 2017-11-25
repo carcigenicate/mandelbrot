@@ -4,8 +4,6 @@
 
   (:import [java.text ParseException]))
 
-; FIXME: Because of the definition of numeric?, this only handles integers currently
-
 (defrecord Operator-Attribute [precedence left-assoc?])
 
 (def new-op-attr ->Operator-Attribute)
@@ -107,7 +105,7 @@
   (let [trimmed (s/triml remaining-equation)
         base-tok (first trimmed)]
     (if (numeric? base-tok)
-      (let [pieces (split-with numeric? trimmed)]
+      (let [pieces (split-with #(or (numeric? %) (= % \.)) trimmed)]
         (mapv (partial apply str) pieces))
 
       [(str base-tok) (subs trimmed 1)])))
@@ -144,7 +142,7 @@
 (defn process-operator [^String op, result-stack, op-def-map]
   (let [[arg2 arg1 & rest-stack] result-stack] ; Args are intentionally backwards
     (if (and arg1 arg2)
-      (let [result (evaluate-operator op [arg2 arg1] op-def-map)]
+      (let [result (evaluate-operator op [arg1 arg2] op-def-map)]
         (conj rest-stack (str result)))
 
       (throw (parsing-error (str "Not enough arguments to evaluate " op))))))
@@ -156,7 +154,7 @@
     (cond
       (nil? tok)
       (if (= (count result-stack) 1)
-        (first result-stack)
+        (parse-double? (first result-stack))
         (throw (parsing-error (str "Too many arguments given. Remaining arguments: "
                                    (drop 1 result-stack)))))
 
@@ -166,6 +164,8 @@
       :else
       (let [updated-stack (process-operator tok result-stack op-def-map)]
         (recur rest-toks updated-stack)))))
+#_
+(defn evaluate-infix-equation [^String equation])
 
 (def ^:private test-op-attr-map
   {"+" (new-op-attr 1 true),
@@ -173,19 +173,20 @@
    "*" (new-op-attr 2 true),
    "/" (new-op-attr 2 true)})
 
-(defn stress-test []
+(defn calc-test [equation]
   (let [ops (mapv str "+-*/")
 
-        equation-toks
-        (for [i (range 1 100)]
+        equation-toks (tokenize-equation equation)
+        #_
+        (for [i (range 1 1000)]
           (if (even? i)
             (rand-nth ops)
-            (str (inc (rand-int 20)))))
+            (str (inc (rand-int 200)))))
 
         rpn-toks
         (infix->RPN-tokens equation-toks test-op-attr-map)
 
         result
-        (evaluate-RPN-tokens rpn-toks {})]
+        (evaluate-RPN-tokens rpn-toks {"+" +, "-" -, "/" /, "*" *})]
 
     result))
