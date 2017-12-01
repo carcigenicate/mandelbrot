@@ -6,10 +6,8 @@
   (:import [java.awt Color]))
 
 (def starting-mult 2)
-#_
-(def effect-all-mult 2)
 
-(def max-rand 5)
+(def max-rand 10)
 (def min-rand (- max-rand))
 
 (def option-font (sf/font :size 15,
@@ -113,7 +111,7 @@
 (defn new-random-button [min-value max-value root class-selector color-atom canvas]
   (let [h (fn [_]
             (affect-all-props root class-selector :text
-              (fn [_] (str (g/random-int min-value max-value global-rand-gen))))
+              (fn [_] (format "%.2f" (g/random-double min-value max-value global-rand-gen))))
 
             (update-coloring! root color-atom canvas))]
 

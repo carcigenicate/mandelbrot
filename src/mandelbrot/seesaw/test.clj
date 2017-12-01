@@ -1,13 +1,11 @@
 (ns mandelbrot.seesaw.test
   (:require [seesaw.core :as sc])
-  (:import (java.util Date)))
-
+  (:import [java.util Date]))
 
 (defn new-menu-bar []
   (sc/menubar :items
               [(sc/label :text "Close on save?"),
-               (sc/checkbox :id :close-on-save?-checkbox)]))
-
+               (sc/text :text)]))
 
 (defn frame []
   (let [bp (sc/border-panel :center (sc/label :text "Text!"))
@@ -19,3 +17,4 @@
     (sc/show! f)
 
     nil))
+

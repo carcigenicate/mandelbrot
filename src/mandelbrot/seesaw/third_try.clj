@@ -34,7 +34,7 @@
 (def text-font "Arial-16")
 (def stat-font "Arial-15")
 
-(def default-save-width 5472)
+(def default-save-width 300)
 (def save-width-ratio 2/3)
 
 (def shutdown-delay 30)
@@ -84,7 +84,7 @@
   "Loops while the given chunk channel is open and supplying chunks.
   Repaints every few seconds, and when the process is completed."
   [canvas chunk-chan]
-  (let [repaint-delay 2500
+  (let [repaint-delay 1000
         t (sc/timer (fn [_] (sc/repaint! canvas))
                     :initial-delay repaint-delay
                     :delay repaint-delay)]
