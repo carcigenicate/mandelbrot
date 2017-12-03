@@ -18,28 +18,11 @@
 (def color-mode BufferedImage/TYPE_INT_RGB)
 (def save-ext "png")
 
-(def update-perc 0.00001)
+(def update-perc 0.0001)
 
 (defn new-image-for-limits ^BufferedImage [limits]
   (let [{:keys [rep-width rep-height]} limits
         ^BufferedImage img (BufferedImage. rep-width rep-height color-mode)]
-
-    img))
-#_
-(defn draw-image-in-limits [limits in-chan color-f chunk-f]
-  (let [img (new-image-for-limits limits)
-        {:keys [rep-width rep-height]} limits]
-
-    (loop [chunk-n 0]
-      (when-let [chunk (<!! in-chan)]
-        (chunk-f chunk-n chunk)
-
-        (doseq [{:keys [rep-x rep-y iters]} chunk]
-          (let [^Color color (color-f rep-x rep-y iters)
-                rgb (.getRGB color)]
-            (.setRGB img rep-x rep-y rgb)))
-
-        (recur (inc chunk-n))))
 
     img))
 
