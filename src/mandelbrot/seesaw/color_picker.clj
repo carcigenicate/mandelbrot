@@ -5,9 +5,9 @@
 
   (:import [java.awt Color]))
 
-(def starting-mult 2)
+(def starting-mult 3)
 
-(def max-rand 10)
+(def max-rand 6)
 (def min-rand (- max-rand))
 
 (def option-font (sf/font :size 15,

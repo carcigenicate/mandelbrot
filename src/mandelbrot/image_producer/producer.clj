@@ -18,7 +18,7 @@
 (def color-mode BufferedImage/TYPE_INT_RGB)
 (def save-ext "png")
 
-(def update-perc 0.001)
+(def update-perc 0.00001)
 
 (defn new-image-for-limits ^BufferedImage [limits]
   (let [{:keys [rep-width rep-height]} limits
