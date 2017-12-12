@@ -26,7 +26,7 @@
 
     img))
 
-; Accepts a (potentially lazy) list of points to process, instead of a channel.
+; Accepts a list of points to process, instead of a channel.
 (defn draw-image-in-limits2 [limits points color-f point-f]
   (let [{:keys [rep-width rep-height]} limits
         img (new-image-for-limits limits)]
@@ -74,7 +74,7 @@
       (double (/ ms-remaining 1000 60)))))
 
 (defn formatted-mins-left [jobs-completed total-jobs ms-elapsed]
-  (str (format "%.1f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
+  (str (format "%.2f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
        " mins"))
 
 (defn canvas-saver [prog-bar time-label color-f save-limits]

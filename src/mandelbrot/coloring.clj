@@ -61,9 +61,9 @@
       (cp/->Color-Mults 4 5 6)
       (cp/->Color-Mults 7 8 9))))
 
-(def cross
+(def grey-scale
   (cp/new-basic-color-f
     (cp/->Color-Options
-       (cp/->Color-Mults 100 100 -6)
-      (cp/->Color-Mults -100 100 5)
-      (cp/->Color-Mults -100 -100 -4))))
+       (cp/->Color-Mults 20 10 5)
+       (cp/->Color-Mults 10 5 5)
+       (cp/->Color-Mults 5 2.5 5))))

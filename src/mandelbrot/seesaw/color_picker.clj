@@ -24,9 +24,12 @@
 (defn flatten-color-options [color-options]
   (flatten (mapv vals (vals color-options))))
 
+(defn format-options [options]
+  (str (vec (flatten-color-options options))))
+
 (defn new-basic-color-f [options]
   (let [{:keys [red-mults green-mults blue-mults]} options
-        str-opts (str (vec (flatten-color-options options)))
+        str-opts (format-options options)
         w #(g/wrap % 0 255)
 
         f (fn [r i n]
@@ -113,7 +116,9 @@
             (affect-all-props root class-selector :text
               (fn [_] (format "%.2f" (g/random-double min-value max-value global-rand-gen))))
 
-            (update-coloring! root color-atom canvas))]
+            (update-coloring! root color-atom canvas)
+
+            (println (format-options (options-from-panel root))))]
 
     (sc/button :text "Randomize", :font option-font,
                :listen [:action h])))

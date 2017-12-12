@@ -25,7 +25,7 @@
 (def default-window-ratio 0.7)
 (def default-window-height (* default-window-width default-window-ratio))
 
-(def move-perc 0.35)
+(def move-perc 0.30)
 
 (def min-zoom-perc -1.0)
 (def max-zoom-perc 2.0)
@@ -38,6 +38,8 @@
 (def save-width-ratio 2/3)
 
 (def shutdown-delay 30)
+
+(def repaint-delay 1000)
 
 (def chunk-perc (delay (double (/ 1 (* (sh/available-processors) 2)))))
 
@@ -55,8 +57,7 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy,
-                    co/super-crazy, co/quad, co/range-coloring, co/cross])
+(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy, co/super-crazy, co/quad, co/range-coloring, co/grey-scale])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
                        l/tentacle-example, l/evolving-swirls l/tool-swirls])
@@ -84,8 +85,7 @@
   "Loops while the given chunk channel is open and supplying chunks.
   Repaints every few seconds, and when the process is completed."
   [canvas chunk-chan]
-  (let [repaint-delay 1000
-        t (sc/timer (fn [_] (sc/repaint! canvas))
+  (let [t (sc/timer (fn [_] (sc/repaint! canvas))
                     :initial-delay repaint-delay
                     :delay repaint-delay)]
     (go-loop []
@@ -147,9 +147,6 @@
                                (sh/zoom-limits-by-perc left-click? zoom-perc)))
 
     (reset-finder-process! cvs)))
-
-(defn hibernate []
-  (.exec (Runtime/getRuntime) "shutdown -h"))
 
 (defn delayed-shutdown [& [s-delay?]]
   (let [t-str (if s-delay? (str " -t " s-delay?) "")]
