@@ -119,6 +119,17 @@
                (start-receiving! cvs point-chan)
                pair)))))
 
+(defn update-location-stat! [root]
+  (let [loc-stats (sc/select root [:.location-entry])
+        {:keys [start-r end-r, start-i end-i]} @global-limits!]
+    ; FIXME: EWWWWW!
+    (doseq [[com stat] (map vector loc-stats [start-r end-r start-i end-i])]
+      (sc/text! com stat))))
+
+(defn update-stat-bar! [root]
+  (doto root
+    (update-location-stat!)))
+
 (defn mouse-handler [root, ^MouseEvent e]
   (let [cvs (sc/select root [:#canvas])
         zoom-perc (sc/selection (sc/select root [:#zoom-perc-input]))
@@ -146,7 +157,8 @@
                                (sh/move-limits-to r i)
                                (sh/zoom-limits-by-perc left-click? zoom-perc)))
 
-    (reset-finder-process! cvs)))
+    (reset-finder-process! cvs)
+    (update-stat-bar! root)))
 
 (defn delayed-shutdown [& [s-delay?]]
   (let [t-str (if s-delay? (str " -t " s-delay?) "")]
@@ -186,11 +198,20 @@
             (sc/value! prog-bar 0)
             (sc/text! time-label "")))))))
 
-(defn canvas []
+(defn new-canvas []
   (let [cvs (sc/canvas :id :canvas
                        :paint (paint-map))]
 
     cvs))
+
+(defn teleport-to [target-limits canvas]
+  (let [[w h] (sh/get-dimensions canvas)]
+    (reset! global-limits!
+            (assoc target-limits
+              :rep-width w
+              :rep-height h))
+
+    (reset-finder-process! canvas)))
 
 (defn save-button [save-root]
   (sc/button :text "Save", :font text-font
@@ -222,24 +243,30 @@
 
     save-panel))
 
-(defn update-location-stat! [root]
-  (let [loc-stat (sc/select root [:#location-stat])
-        {:keys [start-r end-r, start-i end-i]} @global-limits!]
-    (sc/text! loc-stat
-              (str "<html>start-r: " start-r ", end-r: " end-r "<br>"
-                   "start-i: " start-i ", end-i: " end-i "</html>"))))
+(defn new-teleport-button [canvas location-entries]
+  (let [to-limits #(apply cf/repless-limits %)
+        handler (fn [_] (let [coords? (map (comp g/parse-double sc/text) location-entries)]
+                          ; FIXME: Is failing to activate sometimes.
+                          ; TODO: Add trimming
+                          (when (every? identity coords?)
+                            (teleport-to (to-limits coords?) canvas))))
 
-(defn update-stat-bar! [root]
-  (doto root
-    (update-location-stat!)))
+        tele-btn (sc/button :text "Teleport to...", :font stat-font
+                            :listen [:action handler])]
 
-(defn new-stat-bar []
-  (let [location-stat (sc/label :font stat-font, :id :location-stat)
-        panel (sc/flow-panel :items [location-stat])]
+    tele-btn))
 
-    (update-stat-bar! panel)
+(defn new-stat-bar [canvas]
+  (let [e #(sc/text :font stat-font, :class :location-entry, :halign :center, :columns 18)
+        es (for [_ (range 4)] (e))
+        grid (sc/grid-panel :columns 2, :items es)
+        tele-btn (new-teleport-button canvas es)
 
-    panel))
+        stat-bar (sc/flow-panel :items [tele-btn grid])]
+
+    (update-stat-bar! stat-bar)
+
+    stat-bar))
 
 (defn new-zoom-panel []
   (let [zoom-label (sc/label :text "Zoom Percentage: ", :font text-font)
@@ -252,8 +279,9 @@
 
     (sc/horizontal-panel :items [zoom-label zoom-input])))
 
-(defn new-movement-bar [cvs]
-  (let [handler (fn [sym-code r-dir i-dir _]
+(defn new-movement-bar [root]
+  (let [cvs (sc/select root [:#canvas])
+        handler (fn [r-dir i-dir _]
                   (swap! global-limits!
                          (fn [l]
                            (let [[r-off i-off] (map #(* % move-perc)
@@ -261,10 +289,11 @@
                              (sh/move-limits-by l (* r-dir r-off)
                                                   (* i-dir i-off)))))
 
-                  (reset-finder-process! cvs))
+                  (reset-finder-process! cvs)
+                  (update-stat-bar! root))
 
         b #(sc/button :text (str (char %)), :font text-font
-                      :listen [:action (partial handler % %2 %3)])
+                      :listen [:action (partial handler %2 %3)])
 
         pan-panel (sc/flow-panel
                     :items [(b 8593 0 -1) ; Up
@@ -303,12 +332,9 @@
         b #(sc/button :font text-font, :text (str %)
                       :halign :center
                       :listen [:action
-                               (fn [_]
-                                 (let [[w h] (sh/get-dimensions cvs)]
-                                   (reset! global-limits!
-                                           (assoc %2 :rep-width w
-                                                     :rep-height h))
-                                   (reset-finder-process! cvs)))])
+                               (fn [_] (teleport-to %2 cvs)
+                                 (update-stat-bar! root-frame))])
+
 
         buttons (map b (range) location-options)
         panel (sc/vertical-panel :items (conj buttons label))]
@@ -316,18 +342,17 @@
     panel))
 
 (defn new-view-panel []
-  (let [cvs (canvas)
+  (let [cvs (new-canvas)
 
-        bp (sc/border-panel
-             :center cvs
-             :north (new-movement-bar cvs)
-             :west (new-location-picker cvs))
+        bp (sc/border-panel :center cvs)
 
         save-panel (new-save-panel)
-        stat-panel (new-stat-bar)
-        south-panel (sc/vertical-panel :items [save-panel stat-panel])]
+        stat-panel (new-stat-bar cvs)
+        south-panel (sc/vertical-panel :items [stat-panel save-panel])]
 
-    (sc/config! bp :south south-panel)
+    (sc/config! bp :north (new-movement-bar bp)
+                   :west (new-location-picker bp)
+                   :south south-panel)
 
     (sc/listen cvs :mouse-released (partial mouse-handler bp))
 
@@ -361,9 +386,7 @@
                           (assoc % :rep-width w, :rep-height h)))
 
                 (when @updated?
-                  (reset-finder-process! cvs))
-
-                (update-stat-bar! root-frame)))]
+                  (reset-finder-process! cvs))))]
 
     (sc/timer timer-f :initial-delay check-delay, :delay check-delay)))
 
