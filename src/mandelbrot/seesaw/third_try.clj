@@ -57,10 +57,11 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2, co/dull, co/crazy, co/super-crazy, co/quad, co/range-coloring, co/grey-scale])
+(def color-options [co/lava, co/tentacles, co/exp, co/exp2,co/dull, co/crazy, co/super-crazy,
+                    co/quad, co/range-coloring, co/grey-scale, co/new-crazy])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
-                       l/tentacle-example, l/evolving-swirls l/tool-swirls])
+                       l/tentacle-example, l/evolving-swirls l/tool-swirls l/crazy-swirl])
 
 (def global-color-f! (atom co/exp))
 
@@ -246,7 +247,7 @@
 (defn new-teleport-button [canvas location-entries]
   (let [to-limits #(apply cf/repless-limits %)
         handler (fn [_] (let [coords? (map (comp g/parse-double sc/text) location-entries)]
-                          ; FIXME: Is failing to activate sometimes.
+                          ; FIXME: Is failing to activate sometimes?
                           ; TODO: Add trimming
                           (when (every? identity coords?)
                             (teleport-to (to-limits coords?) canvas))))

@@ -7,8 +7,7 @@
 
 (def starting-mult 3)
 
-(def max-rand 6)
-(def min-rand (- max-rand))
+(def default-max-rand-mag 1)
 
 (def option-font (sf/font :size 15,
                           :name "Arial"))
@@ -17,6 +16,12 @@
 
 (defrecord Color-Mults [r i n])
 (defrecord Color-Options [red-mults green-mults blue-mults])
+
+(defn new-color-options [red-r red-i red-n, green-r green-i green-n, blue-r blue-i blue-n]
+  (->Color-Options
+    (->Color-Mults red-r red-i red-n)
+    (->Color-Mults green-r green-i green-n)
+    (->Color-Mults blue-r blue-i blue-n)))
 
 (defn all? [coll]
   (every? identity coll))
@@ -111,17 +116,28 @@
                :font option-font
                :listen [:action handler])))
 
-(defn new-random-button [min-value max-value root class-selector color-atom canvas]
+(defn new-random-button [root class-selector color-atom canvas]
   (let [h (fn [_]
-            (affect-all-props root class-selector :text
-              (fn [_] (format "%.2f" (g/random-double min-value max-value global-rand-gen))))
+            (let [raw-max-value (sc/text (sc/select root [:#rand-mag]))]
+              (when-let [max-value (g/parse-double raw-max-value)]
+                (affect-all-props root class-selector :text
+                  (fn [_] (format "%.2f"
+                                  (g/random-double (- max-value) max-value global-rand-gen))))
 
-            (update-coloring! root color-atom canvas)
+                (update-coloring! root color-atom canvas)
 
-            (println (format-options (options-from-panel root))))]
+                (println (format-options (options-from-panel root))))))]
 
     (sc/button :text "Randomize", :font option-font,
                :listen [:action h])))
+
+(defn new-random-bar [root color-atom canvas]
+  (let [rand-button (new-random-button root :.mult-input color-atom canvas)
+        rand-max-entry (sc/text :text (str default-max-rand-mag), :font option-font
+                                :columns 4, :halign :center
+                                :id :rand-mag)]
+
+    (sc/flow-panel :items [rand-button rand-max-entry])))
 
 (defn new-option-panel [canvas color-atom]
   (let [red-panel (new-color-mult-panel "Red")
@@ -131,10 +147,10 @@
         vert-panel (sc/vertical-panel :items [red-panel green-panel blue-panel])
 
         update-button (new-update-button canvas color-atom vert-panel)
-        rand-button (new-random-button min-rand max-rand vert-panel :.mult-input
-                                       color-atom canvas)]
 
-    (sc/add! vert-panel update-button rand-button)
+        rand-bar (new-random-bar vert-panel color-atom canvas)]
+
+    (sc/add! vert-panel update-button rand-bar)
 
     vert-panel))
 

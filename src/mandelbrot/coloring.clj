@@ -56,14 +56,12 @@
 
 (def range-coloring
   (cp/new-basic-color-f
-    (cp/->Color-Options
-      (cp/->Color-Mults 1 2 3)
-      (cp/->Color-Mults 4 5 6)
-      (cp/->Color-Mults 7 8 9))))
+    (cp/new-color-options 1 2 3, 4 5 6, 7 8 9)))
 
 (def grey-scale
   (cp/new-basic-color-f
-    (cp/->Color-Options
-       (cp/->Color-Mults 20 10 5)
-       (cp/->Color-Mults 10 5 5)
-       (cp/->Color-Mults 5 2.5 5))))
+    (cp/new-color-options 20 10 5, 10 5 5, 5 2.5 5)))
+
+(def new-crazy
+  (cp/new-basic-color-f
+    (cp/new-color-options 1 2 993061001, 40 5 6, 7 8 9)))
