@@ -51,6 +51,11 @@
 (def global-limits!
   (atom default-starting-limits))
 
+(def random-limits (cf/->Mandelbrot-Limits -2 2, -1 1, nil, nil))
+(def smallest-random-width 1e-15)
+
+(def global-rand-gen (g/new-rand-gen))
+
 (def global-finder-pair!
   (atom nil))
 
@@ -131,7 +136,7 @@
   (doto root
     (update-location-stat!)))
 
-(defn mouse-handler [root, ^MouseEvent e]
+(defn mouse-press-handler [root, ^MouseEvent e]
   (let [cvs (sc/select root [:#canvas])
         zoom-perc (sc/selection (sc/select root [:#zoom-perc-input]))
 
@@ -207,12 +212,21 @@
 
 (defn teleport-to [target-limits canvas]
   (let [[w h] (sh/get-dimensions canvas)]
-    (reset! global-limits!
-            (assoc target-limits
-              :rep-width w
-              :rep-height h))
+    (assoc target-limits
+      :rep-width w
+      :rep-height h)))
 
-    (reset-finder-process! canvas)))
+(defn teleport-to! [target-limits canvas]
+  (reset! global-limits! (teleport-to target-limits canvas))
+
+  (reset-finder-process! canvas))
+
+(defn)
+
+(defn new-load-panel []
+  (let [input (sc/text :id :load-input)
+        load-btn (sc/button :text "Load", :font text-font)]))
+
 
 (defn save-button [save-root]
   (sc/button :text "Save", :font text-font
@@ -250,7 +264,7 @@
                           ; FIXME: Is failing to activate sometimes?
                           ; TODO: Add trimming
                           (when (every? identity coords?)
-                            (teleport-to (to-limits coords?) canvas))))
+                            (teleport-to! (to-limits coords?) canvas))))
 
         tele-btn (sc/button :text "Teleport to...", :font stat-font
                             :listen [:action handler])]
@@ -327,18 +341,49 @@
                             :center picker)]
     bp))
 
+(defn random-location-in [limits rand-gen]
+  (println limits)
+  (let [{:keys [start-r end-r, start-i end-i]} limits
+        width (- end-r start-r)
+        height (- end-i start-i)
+        ratio (/ height width)
+
+        new-start-r (g/random-double start-r end-r rand-gen)
+        new-end-r (g/random-double new-start-r end-r rand-gen)
+        new-width (- new-end-r new-start-r)
+
+        new-start-i (g/random-double start-i end-i rand-gen)
+        new-height (* new-width ratio)
+        new-end-i (+ new-start-i new-height)]
+
+    (cf/repless-limits new-start-r  new-end-r, new-start-i new-end-i)))
+
+(defn new-random-location-button [canvas]
+  (let [button (sc/button :text "Random" :font text-font)]
+
+    (sc/listen button
+       :action (fn [_]
+                 (swap! global-limits!
+                        #(let [rand-limits (random-location-in % global-rand-gen)]
+                           (teleport-to rand-limits canvas)))
+
+                 (reset-finder-process! canvas)))
+    button))
+
 (defn new-location-picker [root-frame]
   (let [cvs (sc/select root-frame [:#canvas])
         label (sc/label :font text-font, :text "Locations")
         b #(sc/button :font text-font, :text (str %)
                       :halign :center
                       :listen [:action
-                               (fn [_] (teleport-to %2 cvs)
+                               (fn [_] (teleport-to! %2 cvs)
                                  (update-stat-bar! root-frame))])
 
 
         buttons (map b (range) location-options)
         panel (sc/vertical-panel :items (conj buttons label))]
+
+    (sc/add! panel (new-random-location-button cvs))
 
     panel))
 
@@ -355,7 +400,7 @@
                    :west (new-location-picker bp)
                    :south south-panel)
 
-    (sc/listen cvs :mouse-released (partial mouse-handler bp))
+    (sc/listen cvs :mouse-released (partial mouse-press-handler bp))
 
     (reset-finder-process! cvs)
 
