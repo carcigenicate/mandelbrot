@@ -5,11 +5,6 @@
 
             [helpers.general-helpers :as g]))
 
-(defrecord Mandelbrot-Limits [start-r end-r start-i end-i rep-width rep-height])
-
-(defn repless-limits [start-r end-r start-i end-i]
-  (->Mandelbrot-Limits start-r end-r start-i end-i -1 -1))
-
 (defn generate-check-points
   "Returns a lazy list of [r i rx ry], where r and i are points on the complex plane, and rx ry are the corresponding points in the representation."
   [limits]

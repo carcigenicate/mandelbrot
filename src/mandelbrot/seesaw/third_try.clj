@@ -9,17 +9,23 @@
             [clojure.core.async :refer [go go-loop <! >! chan thread]]
 
             [mandelbrot.seesaw.color-picker :as cp]
-            [mandelbrot.mandelbrot-iteration :as mi]
+
             [mandelbrot.locations :as l]
             [mandelbrot.concurrent-finder :as cf]
             [mandelbrot.seesaw.helpers :as sh]
-            [mandelbrot.coloring :as co]
-            [mandelbrot.image-producer.producer :as mp])
+            [mandelbrot.coloring :as cl]
+            [mandelbrot.color-options :as co]
+            [mandelbrot.image-producer.producer :as mp]
+            [mandelbrot.limits :as ml]
+            [mandelbrot.serialization :as ms]
+            [seesaw.dnd :as dnd])
 
   (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
            [java.util Date]
            [java.awt Canvas Color]
-           [javax.swing Timer JPanel JComponent]))
+           [javax.swing Timer JPanel JComponent]
+           [java.io File]
+           [java.nio.file Paths]))
 
 (def default-window-width 900)
 (def default-window-ratio 0.7)
@@ -33,6 +39,7 @@
 
 (def text-font "Arial-16")
 (def stat-font "Arial-15")
+(def load-font "Arial-15")
 
 (def default-save-width 300)
 (def save-width-ratio 2/3)
@@ -51,7 +58,7 @@
 (def global-limits!
   (atom default-starting-limits))
 
-(def random-limits (cf/->Mandelbrot-Limits -2 2, -1 1, nil, nil))
+(def random-limits (ml/->Mandelbrot-Limits -2 2, -1 1, nil, nil))
 (def smallest-random-width 1e-15)
 
 (def global-rand-gen (g/new-rand-gen))
@@ -62,13 +69,13 @@
 (def global-results
   (atom []))
 
-(def color-options [co/lava, co/tentacles, co/exp, co/exp2,co/dull, co/crazy, co/super-crazy,
-                    co/quad, co/range-coloring, co/grey-scale, co/new-crazy])
+(def color-options [cl/lava, cl/tentacles, cl/exp, cl/exp2,cl/dull, cl/crazy, cl/super-crazy,
+                    cl/quad, cl/range-coloring, cl/grey-scale, cl/new-crazy])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
                        l/tentacle-example, l/evolving-swirls l/tool-swirls l/crazy-swirl])
 
-(def global-color-f! (atom co/exp))
+(def global-color-f! (atom cl/exp))
 
 (defn paint [c g]
   (let [chunks @global-results
@@ -207,7 +214,6 @@
 (defn new-canvas []
   (let [cvs (sc/canvas :id :canvas
                        :paint (paint-map))]
-
     cvs))
 
 (defn teleport-to [target-limits canvas]
@@ -221,12 +227,50 @@
 
   (reset-finder-process! canvas))
 
-(defn)
+(defn update-color-picker! [color-inputs color-opts]
+  (let [flat-opts (co/flatten-color-options color-opts)]
+    (assert (= (count flat-opts) (count color-inputs))) ; TODO: Remove
 
-(defn new-load-panel []
-  (let [input (sc/text :id :load-input)
-        load-btn (sc/button :text "Load", :font text-font)]))
+    (doseq [[input n] (map vector color-inputs flat-opts)]
+      (sc/text! input (str n)))))
 
+(defn load-handler! [root, ^String save]
+  (when-let [[loc cols] (ms/parse? save)]
+    (let [canvas (sc/select root [:#canvas])
+          color-inputs (sc/select root [:.mult-input])]
+      (update-color-picker! color-inputs cols)
+      (teleport-to! loc canvas)
+      (reset! global-color-f! (co/new-basic-color-f cols))
+      (sc/repaint! canvas))))
+
+(defn new-load-input []
+  (let [parse-path (fn [^File f] (->> f (.toURI) (Paths/get) (.getFileName) (.toString)))
+
+        input (sc/text :id :load-input, :columns 20, :font load-font
+
+                       :drag-enabled? true, :drop-mode :insert)]
+
+    ; TODO: Move all this out to allow dragging onto the whole window
+    (sc/config! input :transfer-handler
+       (dnd/default-transfer-handler :import
+                                     [dnd/file-list-flavor
+                                      (fn [{:keys [target data]}]
+                                        (when-let [^File rand-file (g/random-from-collection data global-rand-gen)]
+                                          (sc/text! target (parse-path rand-file)))
+
+                                        true) ; Returning true to allow pasting.
+
+                                      dnd/string-flavor
+                                      (fn [{:keys [target data]}]
+                                        (sc/text! target data)
+                                        true)]))
+    input))
+
+(defn new-load-panel [root]
+  (let [input (new-load-input)
+        load-btn (sc/button :text "Load", :font text-font,
+                            :listen [:action (fn [_] (load-handler! root (sc/text input)))])]
+    (sc/horizontal-panel :items [input load-btn])))
 
 (defn save-button [save-root]
   (sc/button :text "Save", :font text-font
@@ -259,7 +303,7 @@
     save-panel))
 
 (defn new-teleport-button [canvas location-entries]
-  (let [to-limits #(apply cf/repless-limits %)
+  (let [to-limits #(apply ml/repless-limits %)
         handler (fn [_] (let [coords? (map (comp g/parse-double sc/text) location-entries)]
                           ; FIXME: Is failing to activate sometimes?
                           ; TODO: Add trimming
@@ -271,7 +315,7 @@
 
     tele-btn))
 
-(defn new-stat-bar [canvas]
+(defn new-loc-entry-panel [canvas]
   (let [e #(sc/text :font stat-font, :class :location-entry, :halign :center, :columns 18)
         es (for [_ (range 4)] (e))
         grid (sc/grid-panel :columns 2, :items es)
@@ -356,7 +400,7 @@
         new-height (* new-width ratio)
         new-end-i (+ new-start-i new-height)]
 
-    (cf/repless-limits new-start-r  new-end-r, new-start-i new-end-i)))
+    (ml/repless-limits new-start-r  new-end-r, new-start-i new-end-i)))
 
 (defn new-random-location-button [canvas]
   (let [button (sc/button :text "Random" :font text-font)]
@@ -387,33 +431,31 @@
 
     panel))
 
-(defn new-view-panel []
-  (let [cvs (new-canvas)
+(defn new-view-panel [root canvas]
+  (let [bp (sc/border-panel :center canvas)
 
-        bp (sc/border-panel :center cvs)
-
+        load-panel (new-load-panel root)
         save-panel (new-save-panel)
-        stat-panel (new-stat-bar cvs)
-        south-panel (sc/vertical-panel :items [stat-panel save-panel])]
+        loc-entry-panel (new-loc-entry-panel canvas)
+        south-panel (sc/vertical-panel :items [load-panel loc-entry-panel save-panel])]
 
     (sc/config! bp :north (new-movement-bar bp)
                    :west (new-location-picker bp)
                    :south south-panel)
 
-    (sc/listen cvs :mouse-released (partial mouse-press-handler bp))
+    (sc/listen canvas :mouse-released (partial mouse-press-handler bp))
 
-    (reset-finder-process! cvs)
+    (reset-finder-process! canvas)
 
     bp))
 
 (defn main-panel []
-  (let [view-panel (new-view-panel)
-        cvs (sc/select view-panel [:#canvas])
+  (let [cvs (new-canvas)
+        bp (sc/border-panel)]
 
-        color-panel (new-color-panel cvs)
-
-        bp (sc/border-panel :center view-panel
-                            :east color-panel)]
+    (sc/config! bp
+       :center (new-view-panel bp cvs)
+       :east (new-color-panel cvs))
 
     bp))
 
@@ -442,7 +484,7 @@
 
 (defn frame [& [start-r end-r, start-i end-i]]
   (reset! global-limits! (if start-r
-                           (cf/->Mandelbrot-Limits start-r end-r,
+                           (ml/->Mandelbrot-Limits start-r end-r,
                                                    start-i end-i
                                                    default-window-width
                                                    default-window-height)

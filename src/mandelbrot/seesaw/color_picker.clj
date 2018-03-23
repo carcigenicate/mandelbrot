@@ -1,55 +1,24 @@
 (ns mandelbrot.seesaw.color-picker
   (:require [seesaw.core :as sc]
             [seesaw.font :as sf]
+
+            [mandelbrot.color-options :as co]
+
             [helpers.general-helpers :as g])
 
   (:import [java.awt Color]))
 
 (def starting-mult 3)
 
-(def default-max-rand-mag 1)
+(def default-max-rand-mag 1.5)
 
 (def option-font (sf/font :size 15,
                           :name "Arial"))
 
 (def global-rand-gen (g/new-rand-gen))
 
-(defrecord Color-Mults [r i n])
-(defrecord Color-Options [red-mults green-mults blue-mults])
-
-(defn new-color-options [red-r red-i red-n, green-r green-i green-n, blue-r blue-i blue-n]
-  (->Color-Options
-    (->Color-Mults red-r red-i red-n)
-    (->Color-Mults green-r green-i green-n)
-    (->Color-Mults blue-r blue-i blue-n)))
-
 (defn all? [coll]
   (every? identity coll))
-
-(defn flatten-color-options [color-options]
-  (flatten (mapv vals (vals color-options))))
-
-(defn format-options [options]
-  (str (vec (flatten-color-options options))))
-
-(defn new-basic-color-f [options]
-  (let [{:keys [red-mults green-mults blue-mults]} options
-        str-opts (format-options options)
-        w #(g/wrap % 0 255)
-
-        f (fn [r i n]
-            (let [v (fn [mults]
-                      (let [{rm :r, im :i, nm :n} mults]
-                        (w (+ (* r rm)
-                              (* i im)
-                              (* n nm)))))]
-
-              (Color. ^long (v red-mults)
-                      ^long (v green-mults)
-                      ^long (v blue-mults))))]
-
-    ; So we can figure out what coloring was used later
-    (with-meta f {:color-opts str-opts})))
 
 (defn affect-all-props [root class-selector prop-selector f]
   (doseq [wid (sc/select root [class-selector])]
@@ -91,19 +60,19 @@
         values? (map (comp g/parse-double sc/text) sliders)]
 
     (when (all? values?)
-      (apply ->Color-Mults values?))))
+      (apply co/->Color-Mults values?))))
 
 (defn options-from-panel [option-panel]
   (let [panels (sc/select option-panel [:.mult-panel])
         mults? (map mults-from-panel? panels)]
 
     (when (all? mults?)
-      (apply ->Color-Options mults?))))
+      (apply co/->Color-Options mults?))))
 
 (defn update-coloring! [root color-atom canvas]
   (when-let [opts? (options-from-panel root)]
     (reset! color-atom
-            (new-basic-color-f opts?))
+            (co/new-basic-color-f opts?))
 
     (sc/invoke-later
       (sc/repaint! canvas))))
@@ -122,14 +91,14 @@
               (when-let [max-value (g/parse-double raw-max-value)]
                 (affect-all-props root class-selector :text
                   (fn [_] (format "%.2f"
-                                  (g/random-double (- max-value) max-value global-rand-gen))))
+                                  (g/random-double (- max-value) max-value global-rand-gen)))))))]))
 
                 (update-coloring! root color-atom canvas)
 
-                (println (format-options (options-from-panel root))))))]
+                (println (co/format-options (options-from-panel root)))
 
     (sc/button :text "Randomize", :font option-font,
-               :listen [:action h])))
+               :listen [:action h])
 
 (defn new-random-bar [root color-atom canvas]
   (let [rand-button (new-random-button root :.mult-input color-atom canvas)
@@ -158,9 +127,3 @@
   (let [f (sc/frame :title "Color Picker", :size [width :by height]
                     :content (new-option-panel canvas color-atom))]
     f))
-
-(def test-color-mults
-  (->Color-Options
-    (->Color-Mults 1 2 3)
-    (->Color-Mults 4 5 6)
-    (->Color-Mults 7 8 9)))

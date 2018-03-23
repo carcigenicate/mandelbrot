@@ -1,6 +1,7 @@
 (ns mandelbrot.coloring
   (:require [helpers.general-helpers :as g]
-            [mandelbrot.seesaw.color-picker :as cp])
+            [mandelbrot.seesaw.color-picker :as cp]
+            [mandelbrot.color-options :as co])
 
   (:import [java.awt Color]))
 
@@ -55,13 +56,13 @@
       (wr (* y n))))
 
 (def range-coloring
-  (cp/new-basic-color-f
-    (cp/new-color-options 1 2 3, 4 5 6, 7 8 9)))
+  (co/new-basic-color-f
+    (co/new-color-options 1 2 3, 4 5 6, 7 8 9)))
 
 (def grey-scale
-  (cp/new-basic-color-f
-    (cp/new-color-options 20 10 5, 10 5 5, 5 2.5 5)))
+  (co/new-basic-color-f
+    (co/new-color-options 20 10 5, 10 5 5, 5 2.5 5)))
 
 (def new-crazy
-  (cp/new-basic-color-f
-    (cp/new-color-options 1 2 993061001, 40 5 6, 7 8 9)))
+  (co/new-basic-color-f
+    (co/new-color-options 1 2 993061001, 40 5 6, 7 8 9)))

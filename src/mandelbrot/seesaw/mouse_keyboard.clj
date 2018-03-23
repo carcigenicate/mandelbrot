@@ -3,7 +3,7 @@
             [mandelbrot.image-producer.producer :as mp]
             [mandelbrot.seesaw.helpers :as sh])
   (:import (java.awt.event KeyEvent)))
-
+#_ ; Canvas saver needs arguments fixed
 (defn save-handler [root height-ratio color-f limits _]
   (println "Saving...")
   (let [prog-bar (sc/select root [:#save-progress])

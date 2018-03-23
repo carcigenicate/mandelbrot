@@ -99,7 +99,7 @@
                               (formatted-mins-left n total (- (t) start-ms)))))))]
 
     (save-image save-limits color-opt-str img)))
-
+#_ ; Save-image needs arguments fixed.
 (defn test-routine []
   (let [r-width 5472
         r-height 3648
