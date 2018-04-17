@@ -173,10 +173,15 @@
     (reset-finder-process! cvs)
     (update-stat-bar! root)))
 
+(defn run-command [^String command]
+  (.exec (Runtime/getRuntime) command))
+
 (defn delayed-shutdown [& [s-delay?]]
   (let [t-str (if s-delay? (str " -t " s-delay?) "")]
-    (.exec (Runtime/getRuntime)
-           (str "shutdown -s" t-str))))
+    (run-command (str "shutdown -s" t-str))))
+
+(defn abort-shutdown []
+  (run-command "shutdown -a"))
 
 (defn save-handler [save-root _]
   (println (str "Saving... (" (Date.) ")"))
@@ -193,6 +198,9 @@
 
     (thread
       (try
+        #_
+        (abort-shutdown) ; So we can save a second image without it being interrupted by a previous shutdown.
+
         (mp/canvas-saver prog-bar time-label
                          @global-color-f!
                          (assoc @global-limits! :rep-width width,
@@ -205,7 +213,7 @@
         (finally
           (when (close-on-save?)
             (delayed-shutdown shutdown-delay)
-            (System/exit 0))
+            (System/exit 0)) ; TODO: Necessary?
 
           (sc/invoke-later
             (sc/value! prog-bar 0)

@@ -91,14 +91,14 @@
               (when-let [max-value (g/parse-double raw-max-value)]
                 (affect-all-props root class-selector :text
                   (fn [_] (format "%.2f"
-                                  (g/random-double (- max-value) max-value global-rand-gen)))))))]))
+                                  (g/random-double (- max-value) max-value global-rand-gen))
 
-                (update-coloring! root color-atom canvas)
+                    (update-coloring! root color-atom canvas)
 
-                (println (co/format-options (options-from-panel root)))
+                    (println (co/format-options (options-from-panel root))))))))]
 
     (sc/button :text "Randomize", :font option-font,
-               :listen [:action h])
+               :listen [:action h])))
 
 (defn new-random-bar [root color-atom canvas]
   (let [rand-button (new-random-button root :.mult-input color-atom canvas)
