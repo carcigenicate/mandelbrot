@@ -23,20 +23,7 @@
 (defn affect-all-props [root class-selector prop-selector f]
   (doseq [wid (sc/select root [class-selector])]
     (sc/config! wid prop-selector
-               (f (sc/config wid prop-selector)))))
-#_
-(defn effect-all-options [root class-selector]
-  (let [handler (fn [f _]
-                  (affect-all-props root class-selector :text
-                    #(if-let [n? (g/parse-double %)]
-                       (f n?)
-                       %)))
-
-        b #(sc/button :text (str %),
-                      :listen [:action (partial handler %2)])]
-
-    (sc/flow-panel :items [(b "+" #(* % effect-all-mult))
-                           (b "-" #(/ % effect-all-mult))])))
+                (f (sc/config wid prop-selector)))))
 
 (defn new-color-mult-panel [label]
   (let [l #(sc/label :text (str %), :font option-font
@@ -45,9 +32,11 @@
         t #(sc/text :text (str starting-mult), :font option-font,
                     :columns 4, :halign :center, :class :mult-input)
 
-        f #(sc/flow-panel :items [(l %) (t)], :align :center)
+        lock #(sc/checkbox :selected? false, :class :lock-check)
 
-        main-options (sc/vertical-panel :items [(l label) (f "r") (f "i") (f "n")
+        row #(sc/flow-panel :items [(l %) (t) (lock)], :align :center, :class :mult-row)
+
+        main-options (sc/vertical-panel :items [(l label) (row "r") (row "i") (row "n")
                                                 (sc/separator)]
                                         :class :mult-panel)
 
@@ -85,20 +74,26 @@
                :font option-font
                :listen [:action handler])))
 
+(defn random-button-handler [root canvas color-atom _]
+  (let [raw-max-value (sc/text (sc/select root [:#rand-mag]))]
+    (when-let [max-value (g/parse-double raw-max-value)]
+
+      (doseq [row (sc/select root [:.mult-panel :.mult-row])
+              :let [locked? (-> row (sc/select [:.lock-check]) (first) (sc/selection))]]
+
+          (when-not locked?
+            (let [input (sc/select row [:.mult-input])]
+              (sc/text! input
+                (format "%.2f"
+                        (g/random-double (- max-value) max-value global-rand-gen))))))
+
+      (update-coloring! root color-atom canvas)
+
+      (println (co/format-options (options-from-panel root))))))
+
 (defn new-random-button [root class-selector color-atom canvas]
-  (let [h (fn [_]
-            (let [raw-max-value (sc/text (sc/select root [:#rand-mag]))]
-              (when-let [max-value (g/parse-double raw-max-value)]
-                (affect-all-props root class-selector :text
-                  (fn [_] (format "%.2f"
-                                  (g/random-double (- max-value) max-value global-rand-gen))
-
-                    (update-coloring! root color-atom canvas)
-
-                    (println (co/format-options (options-from-panel root))))))))]
-
-    (sc/button :text "Randomize", :font option-font,
-               :listen [:action h])))
+  (sc/button :text "Randomize", :font option-font,
+             :listen [:action (partial random-button-handler root canvas color-atom)]))
 
 (defn new-random-bar [root color-atom canvas]
   (let [rand-button (new-random-button root :.mult-input color-atom canvas)
@@ -108,18 +103,28 @@
 
     (sc/flow-panel :items [rand-button rand-max-entry])))
 
+(defn new-lock-button [root text selection]
+  (let [h (fn [_] (doseq [lock-check (sc/select root [:.lock-check])]
+                    (sc/selection! lock-check selection)))]
+
+    (sc/button :text text, :listen [:action h])))
+
 (defn new-option-panel [canvas color-atom]
   (let [red-panel (new-color-mult-panel "Red")
         green-panel (new-color-mult-panel "Green")
         blue-panel (new-color-mult-panel "Blue")
 
-        vert-panel (sc/vertical-panel :items [red-panel green-panel blue-panel])
+        vert-panel (sc/vertical-panel)
+
+        select-bar (sc/horizontal-panel :items [(new-lock-button vert-panel "Unlock" false)
+                                                (new-lock-button vert-panel "Lock" true)])
 
         update-button (new-update-button canvas color-atom vert-panel)
 
         rand-bar (new-random-bar vert-panel color-atom canvas)]
 
-    (sc/add! vert-panel update-button rand-bar)
+    (sc/config! vert-panel
+       :items [select-bar red-panel green-panel blue-panel update-button rand-bar])
 
     vert-panel))
 
