@@ -14,6 +14,9 @@
   (let [^Dimension dims (sc/config component :size)]
     [(.width dims) (.height dims)]))
 
+(defn component-dimensions [^Component c]
+  [(.getWidth c) (.getHeight c)])
+
 (defn plane-dimensions [limits]
   (let [{:keys [start-r end-r, start-i end-i]} limits]
 
