@@ -18,6 +18,9 @@
             [mandelbrot.image-producer.producer :as mp]
             [mandelbrot.limits :as ml]
             [mandelbrot.serialization :as ms]
+            [mandelbrot.seesaw.multi-progress-bar :as mpb]
+            [mandelbrot.seesaw.save-manager :as msm]
+
             [seesaw.dnd :as dnd])
 
   (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
@@ -69,7 +72,7 @@
 (def global-results
   (atom []))
 
-(def color-options [cl/lava, cl/tentacles, cl/exp, cl/exp2,cl/dull, cl/crazy, cl/super-crazy,
+(def color-options [cl/lava, cl/tentacles, cl/exp, cl/exp2, cl/dull, cl/crazy, cl/super-crazy,
                     cl/quad, cl/range-coloring, cl/grey-scale, cl/new-crazy])
 
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
@@ -81,7 +84,7 @@
   (let [chunks @global-results
         color-f @global-color-f!]
     (doseq [chunk chunks]
-      (doseq [{:keys [r i, rep-x rep-y, iters]} chunk]
+      (doseq [{:keys [r i, rep-x rep-y, iters]} chunk] ; FIXME: Collapse?
         (sg/draw g
            (sg/rect rep-x rep-y 1 1)
            (sg/style :background (color-f r i iters)))))))
@@ -154,10 +157,9 @@
 
         [x y] [(.getX e) (.getY e)]
 
-        [r i]
-        (mapv double
-              [(g/map-range x 0 rep-width start-r end-r)
-               (g/map-range y 0 rep-height start-i end-i)])
+        [r i] (mapv double
+                    [(g/map-range x 0 rep-width start-r end-r)
+                     (g/map-range y 0 rep-height start-i end-i)])
 
         avg-dim (/ (+ rep-width rep-height) 2)
         dot-radius (/ (* (- 1 zoom-perc) avg-dim) 2)]
@@ -180,36 +182,23 @@
 
 (defn save-handler [save-root _]
   (println (str "Saving... (" (Date.) ")"))
-  (let [prog-bar (sc/select save-root [:#save-progress])
-        time-label (sc/select save-root [:#time-remaining])
-        width-input (sc/select save-root [:#save-width-input])
-
-        close-on-save? #(sc/config (sc/select save-root
-                                              [:#close-on-save?-checkbox])
-                                   :selected?)
+  (let [width-input (sc/select save-root [:#save-width-input])
 
         width (sc/value width-input)
-        height (* width save-width-ratio)]
+        height (* width save-width-ratio)
+
+        manager (sc/user-data save-root)]
 
     (thread
       (try
-        (mp/canvas-saver prog-bar time-label
-                         @global-color-f!
-                         (assoc @global-limits! :rep-width width,
-                                                :rep-height height))
+        (msm/start-save manager
+                        (assoc @global-limits! :rep-width width, :rep-height height)
+                        @global-color-f!)
+
         (println "Saved at" (str (Date.) "\n"))
 
         (catch OutOfMemoryError e
-          (println (str "Sorry! That image is too big to be created on this computer! Try increasing the allocated heap size.")))
-
-        (finally
-          (when (close-on-save?)
-            (delayed-shutdown shutdown-delay)
-            (System/exit 0))
-
-          (sc/invoke-later
-            (sc/value! prog-bar 0)
-            (sc/text! time-label "")))))))
+          (println (str "Sorry! That image is too big to be created on this computer! Try increasing the allocated heap size.")))))))
 
 (defn new-canvas []
   (let [cvs (sc/canvas :id :canvas
@@ -276,6 +265,11 @@
   (sc/button :text "Save", :font text-font
              :listen [:action (partial save-handler save-root)]))
 
+(defn on-finish-handler [save-panel]
+  (let [shutdown-check (sc/select save-panel [:#close-on-save?-checkbox])]
+    (when (sc/config shutdown-check :selected?)
+      (delayed-shutdown shutdown-delay))))
+
 (defn new-save-panel []
   (let [time-label (sc/label :font text-font, :id :time-remaining)
         width-label (sc/label :font text-font, :text "Saved Image Width: ")
@@ -283,8 +277,7 @@
                                 :id :save-width-input,
                                 :tip "A number between 1000 and 40000")
         width-panel (sc/horizontal-panel :items [width-label width-input time-label])
-        pb (sc/progress-bar :min 0, :max 100, :value 0
-                            :paint-string? true, :id :save-progress)
+        pb (mpb/new-multi-progress-bar)
 
         save-opts (sc/flow-panel
                     :items [(sc/label :text "Close and shutdown computer when done saving?"
@@ -299,6 +292,9 @@
         save-button (save-button save-panel)]
 
     (sc/add! save-panel save-button)
+
+    (sc/config! save-panel :user-data
+                (msm/new-save-manager save-panel (partial save-panel on-finish-handler)))
 
     save-panel))
 

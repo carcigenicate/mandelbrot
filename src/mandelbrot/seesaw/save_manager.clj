@@ -19,6 +19,9 @@
 
 (def update-perc 0.005)
 
+(defn format-to-n-places [n n-places]
+  (format (str "%." n-places "f") (double n)))
+
 (defn new-save-manager
   ([save-root on-all-finish-f]
    {:save-root save-root, :id-generator (idg/new-id-generator 0),
@@ -57,7 +60,7 @@
 
 (defn limits->std-name [limits]
   (let [{:keys [start-r end-r, start-i end-i]} limits
-        f #(format "%.16f" (double %))]
+        f #(format-to-n-places % 16)]
 
     (str "["(f start-r) " " (f end-r) " " (f start-i) " " (f end-i) "]")))
 
@@ -70,12 +73,8 @@
 
     (ImageIO/write img, ^String save-ext, (File. path))))
 
-(defn perc-done [current-n limits]
-  (let [{:keys [rep-width rep-height]} limits]
-    (double (/ current-n (* rep-width rep-height)))))
-
 (defn minutes-remaining [jobs-completed total-jobs ms-elapsed]
-  (if (zero? jobs-completed)
+  (if (zero? jobs-completed) ; TODO: Handle externally?
     0.0
 
     (let [ms-per (/ ms-elapsed jobs-completed)
@@ -83,10 +82,6 @@
           ms-remaining (* remaining-jobs ms-per)]
 
       (double (/ ms-remaining 1000 60)))))
-
-(defn formatted-mins-left [jobs-completed total-jobs ms-elapsed]
-  (str (format "%.2f" (minutes-remaining jobs-completed total-jobs ms-elapsed))
-       " mins"))
 
 (defn- find-soonest-finishing [progress-snapshot last-elapsed]
   (when (seq progress-snapshot)
@@ -101,7 +96,7 @@
 
     (when-let [mins-left (find-soonest-finishing progress-snapshot last-elapsed-snapshot)]
       (sc/invoke-later
-        (sc/text! time-label (str mins-left " mins")))
+        (sc/text! time-label (str (format-to-n-places mins-left 2) " mins")))
 
       (sc/repaint! [time-label prog-bar]))))
 
@@ -158,8 +153,7 @@
                     (update-UI time-label prog-bar last-ms-elapsed-atom)))
 
                 (fn []
-                  (unregister-save! manager save-id)
-                  (on-all-finish-f)))]
+                  (unregister-save! manager save-id)))]
 
      (save-image save-limits color-opt-str img))))
 
