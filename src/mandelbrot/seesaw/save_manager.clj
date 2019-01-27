@@ -82,20 +82,30 @@
 
       (double (/ ms-remaining 1000 60)))))
 
-(defn- find-soonest-finishing [progress-snapshot last-elapsed]
+(defn- find-ending-ranges [progress-snapshot last-elapsed]
   (when (seq progress-snapshot)
-    (->> progress-snapshot
-         (map (fn [[id {:keys [current-progress max-progress]}]]
-                (minutes-remaining current-progress max-progress (last-elapsed id))))
-         (apply min))))
+    (reduce-kv
+      (fn [[min-t max-t] id {:keys [current-progress max-progress]}]
+        (let [mins-left (minutes-remaining current-progress max-progress (last-elapsed id))]
+          [(min mins-left min-t) (max mins-left max-t)]))
+
+      [Double/MAX_VALUE (- Double/MAX_VALUE)]
+
+      progress-snapshot)))
 
 (defn update-UI [time-label prog-bar last-elapsed-atom]
   (let [progress-snapshot (mpb/get-progress-snapshot prog-bar)
         last-elapsed-snapshot @last-elapsed-atom]
 
-    (when-let [mins-left (find-soonest-finishing progress-snapshot last-elapsed-snapshot)]
-      (sc/invoke-later
-        (sc/text! time-label (str (sh/format-to-n-places mins-left 2) " mins")))
+    (when-let [[min-mins max-mins] (find-ending-ranges progress-snapshot last-elapsed-snapshot)]
+      (let [f #(sh/format-to-n-places % 2)
+            min-str (str (f min-mins)
+                         (when (> (count progress-snapshot) 1)
+                           (str " - " (f max-mins))))]
+
+
+        (sc/invoke-later
+          (sc/text! time-label (str min-str " mins"))))
 
       (sc/repaint! [time-label prog-bar]))))
 

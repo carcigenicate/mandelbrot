@@ -1,11 +1,11 @@
-(defproject mandelbrot "1"
+(defproject mandelbrot "2"
   :description "FIXME: write description"
 
-  :dependencies [[org.clojure/clojure "1.8.0"]
+  :dependencies [[org.clojure/clojure "1.10.0"]
                  [helpers "1"]
-                 [quil "2.6.0"]
-                 [seesaw "1.4.5"]
-                 [org.clojure/core.async "0.3.443"]]
+                 [quil "2.8.0"]
+                 [seesaw "1.5.0"]
+                 [org.clojure/core.async "0.4.490"]]
 
   :main mandelbrot.main
 

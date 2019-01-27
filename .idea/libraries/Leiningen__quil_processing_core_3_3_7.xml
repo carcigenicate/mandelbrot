@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: quil/processing-core:3.3.7">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/quil/processing-core/3.3.7/processing-core-3.3.7.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
