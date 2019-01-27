@@ -4,7 +4,7 @@
             [mandelbrot.seesaw.helpers :as sh]
             [seesaw.graphics :as sg]))
 
-(def prog-text-height-perc 0.15)
+(def prog-text-height-perc 0.3)
 (def prog-text-x-offset-perc 0.01)
 
 (def line-width 10)
@@ -35,7 +35,7 @@
                   text-x (+ x (* cw prog-text-x-offset-perc))
                   text-y (+ font-size
                             (rem (* id font-size) (- ch font-size)))
-                  desc-str (str id ": " (* prog-perc 100) " %")]]
+                  desc-str (str id ": " (sh/format-to-n-places (* prog-perc 100) 1) " %")]]
 
       (sg/draw g
          (sg/line x 0, x ch)
@@ -44,12 +44,12 @@
          (sg/string-shape text-x text-y desc-str)
          (sg/style :font {:size font-size})))))
 
-(defn new-multi-progress-bar []
+(defn new-multi-progress-bar [& seesaw-args]
   (let [progress-state-atom (atom {})
 
         canvas (sc/canvas :paint (partial paint-progress progress-state-atom))
 
-        prog-bar (sc/horizontal-panel :items [canvas])]
+        prog-bar (apply sc/horizontal-panel :items [canvas] seesaw-args)]
 
     (sc/config! prog-bar :user-data progress-state-atom)
 

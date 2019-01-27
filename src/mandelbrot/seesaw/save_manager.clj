@@ -5,7 +5,8 @@
 
             [helpers.general-helpers :as g]
 
-            [seesaw.core :as sc])
+            [seesaw.core :as sc]
+            [mandelbrot.seesaw.helpers :as sh])
 
   (:import [java.awt.image BufferedImage]
            [java.awt Color]
@@ -17,10 +18,7 @@
 (def color-mode BufferedImage/TYPE_INT_RGB)
 (def save-ext "png")
 
-(def update-perc 0.005)
-
-(defn format-to-n-places [n n-places]
-  (format (str "%." n-places "f") (double n)))
+(def update-perc 0.001)
 
 (defn new-save-manager
   ([save-root on-all-finish-f]
@@ -60,7 +58,7 @@
 
 (defn limits->std-name [limits]
   (let [{:keys [start-r end-r, start-i end-i]} limits
-        f #(format-to-n-places % 16)]
+        f #(sh/format-to-n-places % 16)]
 
     (str "["(f start-r) " " (f end-r) " " (f start-i) " " (f end-i) "]")))
 
@@ -69,6 +67,7 @@
                        "Date"  (g/current-ms-timestamp)
                        color-opt-str)
         path (str save-path file-name "." save-ext)]
+
     (clojure.java.io/make-parents path)
 
     (ImageIO/write img, ^String save-ext, (File. path))))
@@ -96,7 +95,7 @@
 
     (when-let [mins-left (find-soonest-finishing progress-snapshot last-elapsed-snapshot)]
       (sc/invoke-later
-        (sc/text! time-label (str (format-to-n-places mins-left 2) " mins")))
+        (sc/text! time-label (str (sh/format-to-n-places mins-left 2) " mins")))
 
       (sc/repaint! [time-label prog-bar]))))
 
@@ -111,7 +110,8 @@
 
 (defn- unregister-save! [manager id]
   (let [{:keys [save-root last-ms-elapsed-atom on-all-finish-f]} manager
-        prog-bar (sc/select save-root [:#save-progress-bar])]
+        prog-bar (sc/select save-root [:#save-progress-bar])
+        time-label (sc/select save-root [:#time-remaining])]
 
     (mpb/remove-job! prog-bar id)
 
@@ -119,10 +119,15 @@
       dissoc id)
 
     (when-not (seq (mpb/get-progress-snapshot prog-bar))
+      (sc/invoke-later
+        (sc/text! time-label ""))
+
+      (sc/repaint! [time-label prog-bar])
+
       (on-all-finish-f))))
 
 (defn start-save [manager save-limits color-f]
-  (let [{:keys [save-root on-all-finish-f id-generator last-ms-elapsed-atom]} manager
+  (let [{:keys [save-root id-generator last-ms-elapsed-atom]} manager
         {:keys [rep-width rep-height]} save-limits
         total (* rep-width rep-height)
 
@@ -145,7 +150,7 @@
                 (fn [n c]
                   (when (zero? (rem n update-every))
                     (let [elapsed (- (cur-ms) start-ms)]
-                      (mpb/set-progress! prog-bar save-id (* 100 (double (/ n total))))
+                      (mpb/set-progress! prog-bar save-id n)
 
                       (swap! last-ms-elapsed-atom
                              assoc save-id elapsed))

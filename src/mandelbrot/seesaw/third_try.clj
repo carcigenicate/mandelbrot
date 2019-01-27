@@ -277,16 +277,16 @@
                                 :id :save-width-input,
                                 :tip "A number between 1000 and 40000")
         width-panel (sc/horizontal-panel :items [width-label width-input time-label])
-        pb (mpb/new-multi-progress-bar)
+        prog-bar (mpb/new-multi-progress-bar :id :save-progress-bar)
+
+        width-prog-panel (sc/grid-panel :columns 1, :items [width-panel prog-bar])
 
         save-opts (sc/flow-panel
                     :items [(sc/label :text "Close and shutdown computer when done saving?"
                                       :font text-font)
                             (sc/checkbox :id :close-on-save?-checkbox)])
 
-        save-panel (sc/vertical-panel :items [width-panel
-                                              pb
-                                              save-opts]
+        save-panel (sc/vertical-panel :items [width-prog-panel save-opts]
                                       :border 5)
 
         save-button (save-button save-panel)]
@@ -294,7 +294,7 @@
     (sc/add! save-panel save-button)
 
     (sc/config! save-panel :user-data
-                (msm/new-save-manager save-panel (partial save-panel on-finish-handler)))
+                (msm/new-save-manager save-panel (partial on-finish-handler save-panel)))
 
     save-panel))
 
@@ -478,7 +478,7 @@
   (doseq [t timers]
     (.stop ^Timer t)))
 
-(defn frame [& [start-r end-r, start-i end-i]]
+(defn new-frame [& [start-r end-r, start-i end-i]]
   (reset! global-limits! (if start-r
                            (ml/->Mandelbrot-Limits start-r end-r,
                                                    start-i end-i
