@@ -1,17 +1,13 @@
 (ns mandelbrot.image-producer.producer
   (:require [mandelbrot.concurrent-finder :as cf]
-            [mandelbrot.locations :as l]
-            [mandelbrot.coloring :as co]
 
-            [clojure.core.async :refer [<!!]]
             [helpers.general-helpers :as g]
             [seesaw.core :as sc])
 
   (:import [java.awt.image BufferedImage]
-           [java.awt Color Graphics2D RenderingHints]
+           [java.awt Color]
            [java.io File]
-           [javax.imageio ImageIO]
-           [java.util Date]))
+           [javax.imageio ImageIO]))
 
 (def save-path "./saves/")
 
@@ -99,6 +95,7 @@
                               (formatted-mins-left n total (- (t) start-ms)))))))]
 
     (save-image save-limits color-opt-str img)))
+
 #_ ; Save-image needs arguments fixed.
 (defn test-routine []
   (let [r-width 5472

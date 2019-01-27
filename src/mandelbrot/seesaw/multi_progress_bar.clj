@@ -10,6 +10,7 @@
 (def line-width 10)
 
 ; TODO: Allow line width, color, etc to be set
+; TODO: Handle bad IDs better. Currently causes an NPE.
 
 (defn clamp-n [n min-n max-n]
   (-> n
@@ -60,17 +61,25 @@
 
 (defn add-job! [prog-bar id max-progress]
   (update-state! prog-bar
-                 assoc id (new-progress-state max-progress)))
+    assoc id (new-progress-state max-progress)))
+
+(defn remove-job! [prog-bar id]
+  (update-state! prog-bar
+    dissoc id))
 
 (defn set-progress! [prog-bar id new-progress]
   (update-state! prog-bar
-                 #(assoc-in % [id :current-progress]
-                            (clamp-n new-progress 0 (get-in % [id :max-progress])))))
+    #(assoc-in % [id :current-progress]
+               (clamp-n new-progress 0 (get-in % [id :max-progress])))))
 
 (defn increment-progress! [prog-bar id progress-to-add]
   (update-state! prog-bar
-                 #(update-in % [id :current-progress]
-                    (fn [p] (clamp-n (+ p progress-to-add) 0 (get-in % [id :max-progress]))))))
+    #(update-in % [id :current-progress]
+       (fn [p] (clamp-n (+ p progress-to-add) 0 (get-in % [id :max-progress]))))))
+
+(defn get-progress-snapshot [prog-bar]
+  (let [stat-atom (sc/user-data prog-bar)]
+    @stat-atom))
 
 (defn new-test-frame []
   (let [bar (new-multi-progress-bar)
@@ -78,8 +87,8 @@
         frame (sc/frame :content bar, :size [1000 :by 200])]
 
     (doto bar
-      (add-job! 1 100)
-      (set-progress! 1 33))
+      (add-job! 1234567 100)
+      (set-progress! 1234567 33))
 
     (sc/repaint! frame)
 
