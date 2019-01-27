@@ -14,6 +14,12 @@
   (let [^Dimension dims (sc/config component :size)]
     [(.width dims) (.height dims)]))
 
+(defn component-dimensions [^Component c]
+  [(.getWidth c) (.getHeight c)])
+
+(defn format-to-n-places [n n-places]
+  (format (str "%." n-places "f") (double n)))
+
 (defn plane-dimensions [limits]
   (let [{:keys [start-r end-r, start-i end-i]} limits]
 

@@ -12,7 +12,7 @@
 
         good-args (if valid? parsed [])
 
-        f (apply ui/frame good-args)]
+        f (apply ui/new-frame good-args)]
 
     (sc/show! f)
 
