@@ -1,7 +1,5 @@
 (ns mandelbrot.seesaw.third-try
   (:require [seesaw.core :as sc]
-            [seesaw.dev :as sd]
-            [seesaw.color :as s-col]
             [seesaw.graphics :as sg]
 
             [helpers.general-helpers :as g]
@@ -15,7 +13,6 @@
             [mandelbrot.seesaw.helpers :as sh]
             [mandelbrot.coloring :as cl]
             [mandelbrot.color-options :as co]
-            [mandelbrot.image-producer.producer :as mp]
             [mandelbrot.limits :as ml]
             [mandelbrot.serialization :as ms]
             [mandelbrot.seesaw.multi-progress-bar :as mpb]
@@ -23,10 +20,10 @@
 
             [seesaw.dnd :as dnd])
 
-  (:import [java.awt.event MouseEvent WindowEvent KeyEvent]
+  (:import [java.awt.event MouseEvent]
            [java.util Date]
-           [java.awt Canvas Color]
-           [javax.swing Timer JPanel JComponent]
+           [java.awt Color]
+           [javax.swing Timer JComponent]
            [java.io File]
            [java.nio.file Paths]))
 
@@ -34,7 +31,7 @@
 (def default-window-ratio 0.7)
 (def default-window-height (* default-window-width default-window-ratio))
 
-(def move-perc 0.30)
+(def move-perc 0.2)
 
 (def min-zoom-perc -1.0)
 (def max-zoom-perc 2.0)
@@ -49,27 +46,24 @@
 
 (def shutdown-delay 30)
 
-(def repaint-delay 1000)
+(def repaint-delay 750)
 
 (def chunk-perc (delay (double (/ 1 (* (sh/available-processors) 2)))))
 
 (def default-starting-limits
   (assoc l/full-map
     :rep-width default-window-width
-    :rep-height default-window-height)) ; Awful workaround!
+    :rep-height default-window-height)) ; TODO: Awful workaround!
 
 (def global-limits!
   (atom default-starting-limits))
 
-(def random-limits (ml/->Mandelbrot-Limits -2 2, -1 1, nil, nil))
-(def smallest-random-width 1e-15)
-
 (def global-rand-gen (g/new-rand-gen))
 
-(def global-finder-pair!
+(def global-finder-pair-atom
   (atom nil))
 
-(def global-results
+(def global-results-atom
   (atom []))
 
 (def color-options [cl/lava, cl/tentacles, cl/exp, cl/exp2, cl/dull, cl/crazy, cl/super-crazy,
@@ -78,16 +72,16 @@
 (def location-options [l/full-map, l/hand-of-god, l/swirl, l/center-spiral,
                        l/tentacle-example, l/evolving-swirls l/tool-swirls l/crazy-swirl])
 
-(def global-color-f! (atom cl/exp))
+(def global-color-f! (atom cl/quad))
 
 (defn paint [c g]
-  (let [chunks @global-results
+  (let [chunks @global-results-atom
         color-f @global-color-f!]
-    (doseq [chunk chunks]
-      (doseq [{:keys [r i, rep-x rep-y, iters]} chunk] ; FIXME: Collapse?
-        (sg/draw g
-           (sg/rect rep-x rep-y 1 1)
-           (sg/style :background (color-f r i iters)))))))
+    (doseq [chunk chunks
+            {:keys [r i, rep-x rep-y, iters]} chunk]
+      (sg/draw g
+         (sg/rect rep-x rep-y 1 1)
+         (sg/style :background (color-f r i iters))))))
 
 (defn paint-map []
   {:after paint, :super? true})
@@ -107,7 +101,7 @@
     (go-loop []
       (if-let [chunk (<! chunk-chan)]
         (do
-          (swap! global-results #(conj % chunk))
+          (swap! global-results-atom #(conj % chunk))
           (recur))
 
         (do
@@ -117,7 +111,7 @@
 (defn stop-current-process!
   "Cancels the global finder."
   []
-  (swap! global-finder-pair!
+  (swap! global-finder-pair-atom
          #(when-let [[_ stop-f] %]
            (stop-f)
            nil)))
@@ -128,9 +122,9 @@
   (let [{:keys [rep-width rep-height] :as limits} @global-limits!]
     (when (pos? (* rep-width rep-height))
       (stop-current-process!)
-      (reset! global-results [])
+      (reset! global-results-atom [])
 
-      (reset! global-finder-pair!
+      (reset! global-finder-pair-atom
               (let [[point-chan :as pair] (start-point-supplier limits)]
                (start-receiving! cvs point-chan)
                pair)))))
@@ -165,8 +159,8 @@
         dot-radius (/ (* (- 1 zoom-perc) avg-dim) 2)]
 
     (sg/draw g
-             (sg/circle x y dot-radius)
-             (sg/style :background (Color. 255 255 255 175)))
+       (sg/circle x y dot-radius)
+       (sg/style :background (Color. 255 255 255 175)))
 
     (swap! global-limits! #(-> %
                                (sh/move-limits-to r i)
@@ -312,8 +306,8 @@
     tele-btn))
 
 (defn new-loc-entry-panel [canvas]
-  (let [e #(sc/text :font stat-font, :class :location-entry, :halign :center, :columns 18)
-        es (for [_ (range 4)] (e))
+  (let [entry #(sc/text :font stat-font, :class :location-entry, :halign :center, :columns 18)
+        es (repeatedly 4 entry)
         grid (sc/grid-panel :columns 2, :items es)
         tele-btn (new-teleport-button canvas es)
 
@@ -347,14 +341,14 @@
                   (reset-finder-process! cvs)
                   (update-stat-bar! root))
 
-        b #(sc/button :text (str (char %)), :font text-font
+        b #(sc/button :text (str %), :font text-font
                       :listen [:action (partial handler %2 %3)])
 
         pan-panel (sc/flow-panel
-                    :items [(b 8593 0 -1) ; Up
-                            (b 8595 0 1) ; Down
-                            (b 8592 -1 0) ; Left
-                            (b 8594 1 0)]) ; Right
+                    :items [(b \↑ 0 -1)
+                            (b \↓ 0 1)
+                            (b \← -1 0)
+                            (b \→ 1 0)])
 
         zoom-panel (new-zoom-panel)
 
