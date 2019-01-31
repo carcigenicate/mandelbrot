@@ -7,7 +7,9 @@
 (def prog-text-height-perc 0.3)
 (def prog-text-x-offset-perc 0.01)
 
-(def line-width 10)
+(def text-swap-perc 0.75)
+
+(def line-width 5)
 
 ; TODO: Allow line width, color, etc to be set
 ; TODO: Handle bad IDs better. Currently causes an NPE.
@@ -22,9 +24,7 @@
 
 (defn paint-progress [progress-state-atom canvas g]
   (let [state-map @progress-state-atom
-
         [cw ch] (sh/component-dimensions canvas)
-
         font-size (int (* ch prog-text-height-perc))]
 
     (doseq [[id {:keys [current-progress max-progress]}] state-map
@@ -32,10 +32,18 @@
             :let [prog-perc (double (/ current-progress max-progress))
                   x (* cw prog-perc)
 
-                  text-x (+ x (* cw prog-text-x-offset-perc))
+                  desc-str (str id ": " (sh/format-to-n-places (* prog-perc 100) 1) " %")
+
+                  x-offset (* cw prog-text-x-offset-perc)
+
+                  ; Swap the side the text is on in the last quarter so the text doesn't
+                  ;  run off the right end of the bar
+                  text-x (if (< prog-perc text-swap-perc)
+                           (+ x x-offset)
+                           (- x x-offset (* 0.5 (count desc-str) font-size)))
+
                   text-y (+ font-size
-                            (rem (* id font-size) (- ch font-size)))
-                  desc-str (str id ": " (sh/format-to-n-places (* prog-perc 100) 1) " %")]]
+                            (rem (* id font-size) (- ch font-size)))]]
 
       (sg/draw g
          (sg/line x 0, x ch)
@@ -46,10 +54,10 @@
 
 (defn new-multi-progress-bar [& seesaw-args]
   (let [progress-state-atom (atom {})
-
         canvas (sc/canvas :paint (partial paint-progress progress-state-atom))
-
-        prog-bar (apply sc/horizontal-panel :items [canvas] seesaw-args)]
+        prog-bar (apply
+                   sc/horizontal-panel :items [canvas], :border 1, :background :black
+                   seesaw-args)]
 
     (sc/config! prog-bar :user-data progress-state-atom)
 
@@ -80,16 +88,3 @@
 (defn get-progress-snapshot [prog-bar]
   (let [stat-atom (sc/user-data prog-bar)]
     @stat-atom))
-
-(defn new-test-frame []
-  (let [bar (new-multi-progress-bar)
-
-        frame (sc/frame :content bar, :size [1000 :by 200])]
-
-    (doto bar
-      (add-job! 1234567 100)
-      (set-progress! 1234567 33))
-
-    (sc/repaint! frame)
-
-    frame))
