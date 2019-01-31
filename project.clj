@@ -3,7 +3,6 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [helpers "1"]
-                 [quil "2.8.0"]
                  [seesaw "1.5.0"]
                  [org.clojure/core.async "0.4.490"]]
 

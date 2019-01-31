@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: quil/processing-pdf:3.2.2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/quil/processing-pdf/3.2.2/processing-pdf-3.2.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
