@@ -1,6 +1,7 @@
 /target
 /classes
 /checkouts
+/.idea
 pom.xml
 pom.xml.asc
 *.jar
@@ -9,3 +10,10 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+.idea/encodings.xml
+.idea/workspace.xml
+hs_err_pid35940.log
+resources/
+run.bat
+saves/
+test/
