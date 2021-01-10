@@ -1,6 +1,6 @@
 # mandelbrot
 
-FIXME: description
+![Sample](https://github.com/carcigenicate/mandelbrot/blob/master/mandelSample.png?raw=true)
 
 ## Installation
 
