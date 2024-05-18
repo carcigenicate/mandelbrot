@@ -2,7 +2,7 @@
   (:require [seesaw.core :as sc]
             [seesaw.graphics :as sg]
 
-            [helpers.general-helpers :as g]
+            [mandelbrot.helpers.general-helpers :as g]
 
             [clojure.core.async :refer [go go-loop <! >! chan thread]]
 

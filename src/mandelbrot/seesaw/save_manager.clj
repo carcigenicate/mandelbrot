@@ -3,7 +3,7 @@
             [mandelbrot.concurrent-finder :as cf]
             [mandelbrot.seesaw.multi-progress-bar :as mpb]
 
-            [helpers.general-helpers :as g]
+            [mandelbrot.helpers.general-helpers :as g]
 
             [seesaw.core :as sc]
             [mandelbrot.seesaw.helpers :as sh])

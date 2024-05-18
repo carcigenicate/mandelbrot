@@ -1,5 +1,5 @@
 (ns mandelbrot.mandelbrot-iteration
-  (:require [helpers.general-helpers :as g]))
+  (:require [mandelbrot.helpers.general-helpers :as g]))
 
 (def std-infinity-limit 2)
 (def std-n-tests 200)

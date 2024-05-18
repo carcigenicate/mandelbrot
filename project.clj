@@ -2,7 +2,6 @@
   :description "FIXME: write description"
 
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [helpers "1"]
                  [seesaw "1.5.0"]
                  [org.clojure/core.async "0.4.490"]]
 

@@ -4,7 +4,7 @@
 
             [mandelbrot.color-options :as co]
 
-            [helpers.general-helpers :as g])
+            [mandelbrot.helpers.general-helpers :as g])
 
   (:import [java.awt Color Component TextField]
            (java.awt.event ActionListener ActionEvent)

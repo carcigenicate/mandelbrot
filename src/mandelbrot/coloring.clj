@@ -1,5 +1,5 @@
 (ns mandelbrot.coloring
-  (:require [helpers.general-helpers :as g]
+  (:require [mandelbrot.helpers.general-helpers :as g]
             [mandelbrot.seesaw.color-picker :as cp]
             [mandelbrot.color-options :as co])
 

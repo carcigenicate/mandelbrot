@@ -1,5 +1,5 @@
 (ns mandelbrot.color-options
-  (:require [helpers.general-helpers :as g])
+  (:require [mandelbrot.helpers.general-helpers :as g])
   (:import [java.awt Color]))
 
 (defrecord Color-Mults [r i n])

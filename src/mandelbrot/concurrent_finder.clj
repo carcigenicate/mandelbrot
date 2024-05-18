@@ -3,7 +3,7 @@
 
             [clojure.core.async :refer [>! >!! chan thread go put! go-loop close!]]
 
-            [helpers.general-helpers :as g]))
+            [mandelbrot.helpers.general-helpers :as g]))
 
 (defn generate-check-points
   "Returns a lazy list of [r i rx ry], where r and i are points on the complex plane, and rx ry are the corresponding points in the representation."

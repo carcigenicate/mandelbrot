@@ -2,7 +2,7 @@
   (:require [mandelbrot.seesaw.third-try :as ui]
             [seesaw.core :as sc]
             [seesaw.dev :as sd]
-            [helpers.general-helpers :as g])
+            [mandelbrot.helpers.general-helpers :as g])
   (:gen-class))
 
 (defn -main [& [start-r? end-r? start-i? end-i? :as args]]
