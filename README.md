@@ -12,6 +12,10 @@ Create a jar using:
 
 In the directory containing `project.clj`.
 
+Or, to just run the code without creating a jar:
+
+    lein run
+
 ## Usage
 
     $ java -jar mandelbrot-0.1.0-standalone.jar [args]
